@@ -138,20 +138,19 @@ class AP2_Gateway {
 		// Include required classes.
 		require_once AP2_GATEWAY_PLUGIN_DIR . 'includes/class-wc-gateway-ap2.php';
 		require_once AP2_GATEWAY_PLUGIN_DIR . 'includes/class-ap2-agent-detector.php';
+		require_once AP2_GATEWAY_PLUGIN_DIR . 'includes/class-ap2-audit-handler.php';
 
 		// Initialize agent detector.
 		AP2_Agent_Detector::instance();
 
-		// Load admin features if in admin.
+		// Load WooCommerce integrations.
 		if ( is_admin() ) {
-			require_once AP2_GATEWAY_PLUGIN_DIR . 'includes/class-ap2-admin-stats.php';
-			require_once AP2_GATEWAY_PLUGIN_DIR . 'includes/class-ap2-admin-dashboard.php';
-			require_once AP2_GATEWAY_PLUGIN_DIR . 'includes/class-ap2-order-handler.php';
-		}
+			// Analytics integration for WooCommerce Admin.
+			require_once AP2_GATEWAY_PLUGIN_DIR . 'includes/class-ap2-analytics-integration.php';
 
-		// Load performance monitoring.
-		require_once AP2_GATEWAY_PLUGIN_DIR . 'includes/class-ap2-performance-monitor.php';
-		require_once AP2_GATEWAY_PLUGIN_DIR . 'includes/class-ap2-query-optimizer.php';
+			// Orders screen integration.
+			require_once AP2_GATEWAY_PLUGIN_DIR . 'includes/class-ap2-orders-integration.php';
+		}
 
 		// Load HPOS features if WooCommerce supports it.
 		if ( class_exists( '\Automattic\WooCommerce\Utilities\OrderUtil' ) ) {
@@ -193,16 +192,11 @@ class AP2_Gateway {
 	 * Plugin activation hook.
 	 */
 	public static function activate() {
-		// Create performance monitoring tables.
-		if ( class_exists( 'AP2_Performance_Monitor' ) ) {
-			AP2_Performance_Monitor::create_tables();
-		}
-
 		// Create HPOS optimizer tables.
 		global $wpdb;
 		$charset_collate = $wpdb->get_charset_collate();
 
-		// Create agent order index table.
+		// Create agent order index table for HPOS optimization.
 		$sql = "CREATE TABLE IF NOT EXISTS {$wpdb->prefix}ap2_agent_order_index (
 			order_id bigint(20) unsigned NOT NULL,
 			agent_id varchar(100) NOT NULL,
@@ -222,23 +216,7 @@ class AP2_Gateway {
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 		dbDelta( $sql );
 
-		// Create performance log table.
-		$sql = "CREATE TABLE IF NOT EXISTS {$wpdb->prefix}ap2_performance_log (
-			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-			operation varchar(100) NOT NULL,
-			execution_time float NOT NULL,
-			context text,
-			timestamp datetime DEFAULT CURRENT_TIMESTAMP,
-			storage_type varchar(20),
-			PRIMARY KEY (id),
-			KEY idx_operation (operation),
-			KEY idx_timestamp (timestamp),
-			KEY idx_execution_time (execution_time)
-		) $charset_collate;";
-
-		dbDelta( $sql );
-
-		// Activation tasks if needed.
+		// Flush rewrite rules.
 		flush_rewrite_rules();
 	}
 

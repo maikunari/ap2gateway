@@ -64,11 +64,6 @@ class AP2_HPOS_Optimizer {
 
 		// Background processing.
 		add_action( 'ap2_process_agent_analytics', array( $this, 'process_agent_analytics_batch' ) );
-
-		// Performance monitoring integration.
-		if ( defined( 'AP2_DEBUG' ) && AP2_DEBUG ) {
-			add_filter( 'woocommerce_order_query', array( $this, 'monitor_order_query' ), 10, 2 );
-		}
 	}
 
 	/**
@@ -806,39 +801,6 @@ class AP2_HPOS_Optimizer {
 		return $data;
 	}
 
-	/**
-	 * Monitor order query performance.
-	 *
-	 * @param WC_Order_Query $query Query object.
-	 * @param array $query_vars Query variables.
-	 * @return WC_Order_Query
-	 */
-	public function monitor_order_query( $query, $query_vars ) {
-		if ( class_exists( 'AP2_Performance_Monitor' ) ) {
-			$start_time = microtime( true );
-
-			// Log query intent.
-			$context = array(
-				'storage_type' => $this->is_hpos_enabled() ? 'hpos' : 'legacy',
-				'has_custom_index' => $this->has_custom_index(),
-				'query_vars' => $query_vars,
-			);
-
-			// Hook to measure execution time after query runs.
-			add_action( 'woocommerce_order_query', function() use ( $start_time, $context ) {
-				$execution_time = microtime( true ) - $start_time;
-				if ( $execution_time > 0.5 ) {
-					AP2_Performance_Monitor::instance()->log_performance_metric(
-						'slow_order_query',
-						$execution_time,
-						$context
-					);
-				}
-			}, 999 );
-		}
-
-		return $query;
-	}
 }
 
 // Initialize optimizer.
