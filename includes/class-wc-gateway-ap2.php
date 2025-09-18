@@ -196,6 +196,15 @@ class WC_Gateway_AP2 extends WC_Payment_Gateway {
 	}
 
 	/**
+	 * Check if gateway is in test mode.
+	 *
+	 * @return bool True if test mode is enabled.
+	 */
+	public function is_test_mode() {
+		return $this->testmode;
+	}
+
+	/**
 	 * Admin Panel Options.
 	 */
 	public function admin_options() {

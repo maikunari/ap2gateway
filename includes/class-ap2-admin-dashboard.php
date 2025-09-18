@@ -336,7 +336,7 @@ class AP2_Admin_Dashboard {
 		$stats = $this->get_transaction_statistics();
 		$recent_orders = $this->get_recent_agent_orders( 15 );
 		$gateway = new WC_Gateway_AP2();
-		$is_test_mode = $gateway->testmode;
+		$is_test_mode = $gateway->is_test_mode();
 		?>
 		<div class="wrap ap2-dashboard">
 			<h1>
@@ -371,11 +371,7 @@ class AP2_Admin_Dashboard {
 						<h3><?php esc_html_e( 'Agent Orders', 'ap2-gateway' ); ?></h3>
 						<div class="ap2-stat-number"><?php echo esc_html( number_format_i18n( $stats['total_agent_orders'] ) ); ?></div>
 						<div class="ap2-stat-label">
-							<?php
-							echo esc_html(
-								wc_price( $stats['total_agent_revenue'] )
-							);
-							?>
+							<?php echo wp_kses_post( wc_price( $stats['total_agent_revenue'] ) ); ?>
 							<?php esc_html_e( 'revenue', 'ap2-gateway' ); ?>
 						</div>
 					</div>
@@ -388,11 +384,7 @@ class AP2_Admin_Dashboard {
 						<h3><?php esc_html_e( 'Human Orders', 'ap2-gateway' ); ?></h3>
 						<div class="ap2-stat-number"><?php echo esc_html( number_format_i18n( $stats['total_human_orders'] ) ); ?></div>
 						<div class="ap2-stat-label">
-							<?php
-							echo esc_html(
-								wc_price( $stats['total_human_revenue'] )
-							);
-							?>
+							<?php echo wp_kses_post( wc_price( $stats['total_human_revenue'] ) ); ?>
 							<?php esc_html_e( 'revenue', 'ap2-gateway' ); ?>
 						</div>
 					</div>
@@ -429,7 +421,7 @@ class AP2_Admin_Dashboard {
 							$avg_order_value = $stats['total_agent_orders'] > 0
 								? $stats['total_agent_revenue'] / $stats['total_agent_orders']
 								: 0;
-							echo esc_html( wc_price( $avg_order_value ) );
+							echo wp_kses_post( wc_price( $avg_order_value ) );
 							?>
 						</div>
 						<div class="ap2-stat-label">
