@@ -64,6 +64,11 @@ class AP2_HPOS_Optimizer {
 
 		// Background processing.
 		add_action( 'ap2_process_agent_analytics', array( $this, 'process_agent_analytics_batch' ) );
+
+		// Performance monitoring integration.
+		if ( defined( 'AP2_DEBUG' ) && AP2_DEBUG ) {
+			add_filter( 'woocommerce_order_query', array( $this, 'monitor_order_query' ), 10, 2 );
+		}
 	}
 
 	/**
@@ -658,6 +663,129 @@ class AP2_HPOS_Optimizer {
 		}
 
 		return $args;
+	}
+
+	/**
+	 * Register bulk actions for agent orders.
+	 */
+	public function register_bulk_actions() {
+		if ( ! $this->is_hpos_enabled() ) {
+			return;
+		}
+
+		// Add bulk actions for agent order processing.
+		add_filter( 'bulk_actions-woocommerce_page_wc-orders', array( $this, 'add_agent_bulk_actions' ) );
+		add_filter( 'handle_bulk_actions-woocommerce_page_wc-orders', array( $this, 'handle_agent_bulk_actions' ), 10, 3 );
+	}
+
+	/**
+	 * Add agent bulk actions.
+	 *
+	 * @param array $actions Existing actions.
+	 * @return array Modified actions.
+	 */
+	public function add_agent_bulk_actions( $actions ) {
+		$actions['ap2_reindex'] = __( 'Reindex Agent Orders', 'ap2-gateway' );
+		$actions['ap2_export_agents'] = __( 'Export Agent Data', 'ap2-gateway' );
+		return $actions;
+	}
+
+	/**
+	 * Handle agent bulk actions.
+	 *
+	 * @param string $redirect_to Redirect URL.
+	 * @param string $doaction Action being performed.
+	 * @param array $order_ids Order IDs.
+	 * @return string Redirect URL.
+	 */
+	public function handle_agent_bulk_actions( $redirect_to, $doaction, $order_ids ) {
+		if ( 'ap2_reindex' === $doaction ) {
+			foreach ( $order_ids as $order_id ) {
+				$this->update_order_index( $order_id );
+			}
+			$redirect_to = add_query_arg( 'ap2_reindexed', count( $order_ids ), $redirect_to );
+		} elseif ( 'ap2_export_agents' === $doaction ) {
+			$this->export_agent_data( $order_ids );
+		}
+		return $redirect_to;
+	}
+
+	/**
+	 * Export agent data for selected orders.
+	 *
+	 * @param array $order_ids Order IDs to export.
+	 */
+	private function export_agent_data( $order_ids ) {
+		$data = array();
+		foreach ( $order_ids as $order_id ) {
+			$order = wc_get_order( $order_id );
+			if ( $order && $this->is_agent_order( $order ) ) {
+				$data[] = array(
+					'order_id' => $order_id,
+					'agent_id' => $order->get_meta( '_ap2_agent_id' ),
+					'mandate_token' => $order->get_meta( '_ap2_mandate_token' ),
+					'transaction_id' => $order->get_meta( '_ap2_transaction_id' ),
+					'total' => $order->get_total(),
+					'date' => $order->get_date_created()->format( 'Y-m-d H:i:s' ),
+				);
+			}
+		}
+
+		if ( ! empty( $data ) ) {
+			header( 'Content-Type: text/csv' );
+			header( 'Content-Disposition: attachment; filename="agent-orders-' . date('Y-m-d') . '.csv"' );
+			$output = fopen( 'php://output', 'w' );
+			fputcsv( $output, array_keys( $data[0] ) );
+			foreach ( $data as $row ) {
+				fputcsv( $output, $row );
+			}
+			fclose( $output );
+			exit;
+		}
+	}
+
+	/**
+	 * Check if order is an agent order.
+	 *
+	 * @param WC_Order $order Order object.
+	 * @return bool
+	 */
+	private function is_agent_order( $order ) {
+		return $order->get_payment_method() === 'ap2_gateway' || $order->get_meta( '_ap2_agent_id' );
+	}
+
+	/**
+	 * Monitor order query performance.
+	 *
+	 * @param WC_Order_Query $query Query object.
+	 * @param array $query_vars Query variables.
+	 * @return WC_Order_Query
+	 */
+	public function monitor_order_query( $query, $query_vars ) {
+		if ( class_exists( 'AP2_Performance_Monitor' ) ) {
+			$start_time = microtime( true );
+
+			// Log query intent.
+			$context = array(
+				'storage_type' => $this->is_hpos_enabled() ? 'hpos' : 'legacy',
+				'has_custom_index' => $this->has_custom_index(),
+				'query_vars' => $query_vars,
+			);
+
+			// Hook to measure execution time after query runs.
+			add_action( 'woocommerce_order_query', function() use ( $start_time, $context ) {
+				$execution_time = microtime( true ) - $start_time;
+				if ( $execution_time > 0.5 ) {
+					AP2_Performance_Monitor::instance()->log_performance_metric(
+						'slow_order_query',
+						$execution_time,
+						$context
+					);
+				}
+			}, 999 );
+		}
+
+		return $query;
 	}
 }
 

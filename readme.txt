@@ -133,7 +133,7 @@ The plugin supports WooCommerce 5.0 and above, and has been tested with the late
 
 == Changelog ==
 
-= 1.0.0 - 2025-01-18 =
+= 1.0.0 - 2025-09-18 =
 * Initial release
 * First WordPress plugin to support Google's AP2 protocol
 * Agent ID and Mandate Token authentication

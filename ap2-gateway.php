@@ -149,6 +149,10 @@ class AP2_Gateway {
 			require_once AP2_GATEWAY_PLUGIN_DIR . 'includes/class-ap2-order-handler.php';
 		}
 
+		// Load performance monitoring.
+		require_once AP2_GATEWAY_PLUGIN_DIR . 'includes/class-ap2-performance-monitor.php';
+		require_once AP2_GATEWAY_PLUGIN_DIR . 'includes/class-ap2-query-optimizer.php';
+
 		// Load HPOS features if WooCommerce supports it.
 		if ( class_exists( '\Automattic\WooCommerce\Utilities\OrderUtil' ) ) {
 			require_once AP2_GATEWAY_PLUGIN_DIR . 'includes/class-ap2-hpos-optimizer.php';
@@ -189,6 +193,51 @@ class AP2_Gateway {
 	 * Plugin activation hook.
 	 */
 	public static function activate() {
+		// Create performance monitoring tables.
+		if ( class_exists( 'AP2_Performance_Monitor' ) ) {
+			AP2_Performance_Monitor::create_tables();
+		}
+
+		// Create HPOS optimizer tables.
+		global $wpdb;
+		$charset_collate = $wpdb->get_charset_collate();
+
+		// Create agent order index table.
+		$sql = "CREATE TABLE IF NOT EXISTS {$wpdb->prefix}ap2_agent_order_index (
+			order_id bigint(20) unsigned NOT NULL,
+			agent_id varchar(100) NOT NULL,
+			mandate_token varchar(100),
+			transaction_type varchar(50),
+			transaction_id varchar(100),
+			payment_timestamp datetime DEFAULT NULL,
+			total_amount decimal(10,2) DEFAULT 0,
+			processing_time int(11) DEFAULT 0,
+			PRIMARY KEY (order_id),
+			KEY idx_agent_id (agent_id),
+			KEY idx_transaction_type (transaction_type),
+			KEY idx_payment_timestamp (payment_timestamp),
+			KEY idx_mandate_token (mandate_token)
+		) $charset_collate;";
+
+		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+		dbDelta( $sql );
+
+		// Create performance log table.
+		$sql = "CREATE TABLE IF NOT EXISTS {$wpdb->prefix}ap2_performance_log (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			operation varchar(100) NOT NULL,
+			execution_time float NOT NULL,
+			context text,
+			timestamp datetime DEFAULT CURRENT_TIMESTAMP,
+			storage_type varchar(20),
+			PRIMARY KEY (id),
+			KEY idx_operation (operation),
+			KEY idx_timestamp (timestamp),
+			KEY idx_execution_time (execution_time)
+		) $charset_collate;";
+
+		dbDelta( $sql );
+
 		// Activation tasks if needed.
 		flush_rewrite_rules();
 	}
