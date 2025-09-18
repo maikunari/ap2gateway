@@ -134,8 +134,17 @@ class AP2_Gateway {
 			return;
 		}
 
-		// Include the gateway class.
+		// Include required classes.
 		require_once AP2_GATEWAY_PLUGIN_DIR . 'includes/class-wc-gateway-ap2.php';
+		require_once AP2_GATEWAY_PLUGIN_DIR . 'includes/class-ap2-agent-detector.php';
+
+		// Initialize agent detector.
+		AP2_Agent_Detector::instance();
+
+		// Load admin statistics if in admin.
+		if ( is_admin() ) {
+			require_once AP2_GATEWAY_PLUGIN_DIR . 'includes/class-ap2-admin-stats.php';
+		}
 	}
 
 	/**
