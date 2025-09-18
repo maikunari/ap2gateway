@@ -1,0 +1,85 @@
+/**
+ * AP2 Gateway Admin Styles
+ *
+ * Minimal custom styles that leverage WooCommerce's design system.
+ * Uses WooCommerce's purple theme color (#7f54b3) for brand consistency.
+ */
+
+/* Agent Indicator Badge - Uses WC purple */
+.ap2-gateway-badge.ap2-gateway-agent {
+	background-color: #7f54b3;
+	color: #fff;
+}
+
+/* Test Badge - Uses WC warning color */
+.ap2-gateway-badge.ap2-gateway-test {
+	background-color: #f0b849;
+	color: #fff;
+	font-size: 0.65em;
+	margin-left: 0.25em;
+}
+
+/* Agent Order Row Highlighting - Subtle purple tint */
+.ap2-agent-order-row,
+.ap2-gateway-agent-row {
+	background-color: rgba(127, 84, 179, 0.04) !important;
+}
+
+.ap2-agent-order-row:hover,
+.ap2-gateway-agent-row:hover {
+	background-color: rgba(127, 84, 179, 0.08) !important;
+}
+
+/* Column Header Styling */
+.ap2-column-header {
+	font-size: 1.2em;
+}
+
+/* Agent Info Box on Order Edit Screen */
+.ap2-agent-info {
+	margin: 10px 0;
+	padding: 10px;
+	background: #f0f8ff;
+	border-left: 4px solid #7f54b3;
+}
+
+.ap2-agent-info h4 {
+	margin: 0 0 10px;
+	color: #7f54b3;
+}
+
+/* Purple Highlight for Analytics */
+.ap2-gateway-highlight {
+	color: #7f54b3;
+	font-weight: 600;
+}
+
+/* Override any remaining custom styles to use WC patterns */
+.woocommerce-page .ap2-gateway-order-type {
+	text-align: center;
+}
+
+.woocommerce-page .ap2-gateway-badge {
+	display: inline-block;
+	padding: 0.2em 0.5em;
+	font-size: 0.75em;
+	font-weight: 600;
+	line-height: 1;
+	text-align: center;
+	white-space: nowrap;
+	vertical-align: baseline;
+	border-radius: 0.2em;
+}
+
+/* Match WooCommerce filter dropdown styles */
+.ap2-gateway-filter {
+	margin: 0 8px 0 0;
+}
+
+/* Ensure compatibility with WooCommerce's responsive design */
+@media screen and (max-width: 782px) {
+	.ap2-gateway-badge {
+		font-size: 0.65em;
+		padding: 0.15em 0.4em;
+	}
+}

@@ -63,9 +63,6 @@ class AP2_Order_List_Modifications {
 		// Add row classes for styling.
 		add_filter( 'post_class', array( $this, 'add_order_row_class' ), 10, 3 );
 
-		// Add inline styles.
-		add_action( 'admin_head', array( $this, 'add_inline_styles' ) );
-
 		// Quick edit compatibility.
 		add_action( 'woocommerce_order_item_add_action_buttons', array( $this, 'add_agent_info_to_order' ) );
 	}
@@ -160,17 +157,21 @@ class AP2_Order_List_Modifications {
 			$is_test = strpos( $transaction_id, 'TEST-' ) === 0;
 
 			?>
-			<div class="ap2-order-type ap2-agent" title="<?php echo esc_attr( sprintf( __( 'Agent: %s', 'ap2-gateway' ), $agent_id ) ); ?>">
-				<span class="ap2-icon">🤖</span>
+			<div class="ap2-gateway-order-type">
+				<span class="ap2-gateway-badge ap2-gateway-agent" title="<?php echo esc_attr( sprintf( __( 'Agent: %s', 'ap2-gateway' ), $agent_id ) ); ?>">
+					🤖
+				</span>
 				<?php if ( $is_test ) : ?>
-					<span class="ap2-test-badge"><?php esc_html_e( 'TEST', 'ap2-gateway' ); ?></span>
+					<span class="ap2-gateway-badge ap2-gateway-test"><?php esc_html_e( 'TEST', 'ap2-gateway' ); ?></span>
 				<?php endif; ?>
 			</div>
 			<?php
 		} else {
 			?>
-			<div class="ap2-order-type ap2-human" title="<?php esc_attr_e( 'Human Order', 'ap2-gateway' ); ?>">
-				<span class="ap2-icon">👤</span>
+			<div class="ap2-gateway-order-type">
+				<span class="ap2-gateway-badge" style="background-color: #e0e0e0; color: #50575e;">
+					👤
+				</span>
 			</div>
 			<?php
 		}
@@ -188,7 +189,7 @@ class AP2_Order_List_Modifications {
 
 		$selected = isset( $_GET['order_type'] ) ? sanitize_text_field( wp_unslash( $_GET['order_type'] ) ) : '';
 		?>
-		<select name="order_type" id="dropdown_order_type">
+		<select name="order_type" id="dropdown_order_type" class="wc-enhanced-select ap2-gateway-filter">
 			<option value=""><?php esc_html_e( 'All order types', 'ap2-gateway' ); ?></option>
 			<option value="agent" <?php selected( $selected, 'agent' ); ?>>
 				🤖 <?php esc_html_e( 'Agent Orders', 'ap2-gateway' ); ?>
@@ -341,80 +342,6 @@ class AP2_Order_List_Modifications {
 		<?php
 	}
 
-	/**
-	 * Add inline styles.
-	 */
-	public function add_inline_styles() {
-		$screen = get_current_screen();
-		if ( ! $screen || ! in_array( $screen->id, array( 'edit-shop_order', 'woocommerce_page_wc-orders' ), true ) ) {
-			return;
-		}
-		?>
-		<style>
-			/* Order Type Column */
-			.column-order_type {
-				width: 50px !important;
-				text-align: center;
-			}
-
-			.ap2-column-header {
-				font-size: 18px;
-				cursor: help;
-			}
-
-			.ap2-order-type {
-				text-align: center;
-				position: relative;
-			}
-
-			.ap2-order-type .ap2-icon {
-				font-size: 20px;
-				line-height: 1;
-			}
-
-			.ap2-agent .ap2-icon {
-				cursor: help;
-			}
-
-			.ap2-test-badge {
-				position: absolute;
-				top: -5px;
-				right: -5px;
-				background: #ffb900;
-				color: #fff;
-				font-size: 9px;
-				padding: 2px 4px;
-				border-radius: 3px;
-				font-weight: bold;
-			}
-
-			/* Row Highlighting */
-			.ap2-agent-order-row {
-				background-color: #f0f8ff !important;
-			}
-
-			.ap2-agent-order-row.alternate {
-				background-color: #e8f4fd !important;
-			}
-
-			.ap2-agent-order-row:hover {
-				background-color: #dbeeff !important;
-			}
-
-			/* Filter Dropdown */
-			#dropdown_order_type {
-				margin-right: 8px;
-			}
-
-			/* Responsive */
-			@media screen and (max-width: 782px) {
-				.column-order_type {
-					display: none !important;
-				}
-			}
-		</style>
-		<?php
-	}
 }
 
 // Initialize only if in admin.

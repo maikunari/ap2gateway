@@ -88,243 +88,280 @@ class AP2_Analytics_Simple {
 		// Get analytics data.
 		$data = $this->get_analytics_data();
 		?>
-		<div class="wrap">
-			<h1>
-				<span class="dashicons dashicons-chart-bar" style="font-size: 30px; width: 30px; height: 30px; margin-right: 10px;"></span>
+		<div class="wrap woocommerce-page">
+			<h1 class="wp-heading-inline">
 				<?php esc_html_e( 'AP2 Agent Analytics', 'ap2-gateway' ); ?>
 			</h1>
 
-			<!-- Date Range Selector -->
-			<div class="tablenav top">
-				<div class="alignleft actions">
-					<form method="get" action="">
-						<input type="hidden" name="page" value="ap2-analytics" />
-						<select name="range" id="date-range">
-							<option value="7day" <?php selected( isset( $_GET['range'] ) ? $_GET['range'] : '7day', '7day' ); ?>>
-								<?php esc_html_e( 'Last 7 Days', 'ap2-gateway' ); ?>
-							</option>
-							<option value="30day" <?php selected( isset( $_GET['range'] ) ? $_GET['range'] : '', '30day' ); ?>>
-								<?php esc_html_e( 'Last 30 Days', 'ap2-gateway' ); ?>
-							</option>
-							<option value="3month" <?php selected( isset( $_GET['range'] ) ? $_GET['range'] : '', '3month' ); ?>>
-								<?php esc_html_e( 'Last 3 Months', 'ap2-gateway' ); ?>
-							</option>
-						</select>
-						<input type="submit" class="button" value="<?php esc_attr_e( 'Filter', 'ap2-gateway' ); ?>" />
-					</form>
+			<!-- Date Range Selector - WooCommerce Style -->
+			<div class="woocommerce-filters" style="margin: 20px 0;">
+				<form method="get" action="">
+					<input type="hidden" name="page" value="ap2-analytics" />
+					<select name="range" class="wc-enhanced-select">
+						<option value="7day" <?php selected( isset( $_GET['range'] ) ? $_GET['range'] : '7day', '7day' ); ?>>
+							<?php esc_html_e( 'Last 7 Days', 'ap2-gateway' ); ?>
+						</option>
+						<option value="30day" <?php selected( isset( $_GET['range'] ) ? $_GET['range'] : '', '30day' ); ?>>
+							<?php esc_html_e( 'Last 30 Days', 'ap2-gateway' ); ?>
+						</option>
+						<option value="3month" <?php selected( isset( $_GET['range'] ) ? $_GET['range'] : '', '3month' ); ?>>
+							<?php esc_html_e( 'Last 3 Months', 'ap2-gateway' ); ?>
+						</option>
+					</select>
+					<button type="submit" class="button button-primary">
+						<?php esc_html_e( 'Filter', 'ap2-gateway' ); ?>
+					</button>
+				</form>
+			</div>
+
+			<!-- Summary Cards - WooCommerce Stats Overview Style -->
+			<div class="woocommerce-stats-overview">
+				<div class="woocommerce-stats-overview__item">
+					<div class="woocommerce-stats-overview__label">
+						<?php esc_html_e( 'Agent Orders', 'ap2-gateway' ); ?>
+					</div>
+					<div class="woocommerce-stats-overview__value">
+						<?php echo esc_html( number_format_i18n( $data['agent_orders'] ) ); ?>
+					</div>
+					<div class="woocommerce-stats-overview__delta">
+						<?php echo wp_kses_post( wc_price( $data['agent_revenue'] ) ); ?>
+						<?php esc_html_e( 'revenue', 'ap2-gateway' ); ?>
+					</div>
+				</div>
+
+				<div class="woocommerce-stats-overview__item">
+					<div class="woocommerce-stats-overview__label">
+						<?php esc_html_e( 'Human Orders', 'ap2-gateway' ); ?>
+					</div>
+					<div class="woocommerce-stats-overview__value">
+						<?php echo esc_html( number_format_i18n( $data['human_orders'] ) ); ?>
+					</div>
+					<div class="woocommerce-stats-overview__delta">
+						<?php echo wp_kses_post( wc_price( $data['human_revenue'] ) ); ?>
+						<?php esc_html_e( 'revenue', 'ap2-gateway' ); ?>
+					</div>
+				</div>
+
+				<div class="woocommerce-stats-overview__item">
+					<div class="woocommerce-stats-overview__label">
+						<?php esc_html_e( 'Agent Share', 'ap2-gateway' ); ?>
+					</div>
+					<div class="woocommerce-stats-overview__value ap2-gateway-highlight">
+						<?php echo esc_html( $data['agent_percentage'] ); ?>%
+					</div>
+					<div class="woocommerce-stats-overview__delta">
+						<?php esc_html_e( 'of total orders', 'ap2-gateway' ); ?>
+					</div>
+				</div>
+
+				<div class="woocommerce-stats-overview__item">
+					<div class="woocommerce-stats-overview__label">
+						<?php esc_html_e( 'Avg Agent Order', 'ap2-gateway' ); ?>
+					</div>
+					<div class="woocommerce-stats-overview__value">
+						<?php echo wp_kses_post( wc_price( $data['avg_agent_order'] ) ); ?>
+					</div>
+					<div class="woocommerce-stats-overview__delta">
+						<?php esc_html_e( 'per transaction', 'ap2-gateway' ); ?>
+					</div>
 				</div>
 			</div>
 
-			<!-- Summary Cards -->
-			<div class="ap2-summary-cards">
-				<div class="ap2-card">
-					<div class="ap2-card-icon">🤖</div>
-					<div class="ap2-card-content">
-						<div class="ap2-card-title"><?php esc_html_e( 'Agent Orders', 'ap2-gateway' ); ?></div>
-						<div class="ap2-card-value"><?php echo esc_html( number_format_i18n( $data['agent_orders'] ) ); ?></div>
-						<div class="ap2-card-subtitle">
-							<?php echo wp_kses_post( wc_price( $data['agent_revenue'] ) ); ?>
-							<?php esc_html_e( 'revenue', 'ap2-gateway' ); ?>
-						</div>
-					</div>
+			<!-- Top Agents Table - WooCommerce Table Card Style -->
+			<div class="woocommerce-table-card" style="margin-top: 24px;">
+				<div class="woocommerce-table-card__header">
+					<h2 class="woocommerce-table-card__title"><?php esc_html_e( 'Top Agents', 'ap2-gateway' ); ?></h2>
 				</div>
-
-				<div class="ap2-card">
-					<div class="ap2-card-icon">👤</div>
-					<div class="ap2-card-content">
-						<div class="ap2-card-title"><?php esc_html_e( 'Human Orders', 'ap2-gateway' ); ?></div>
-						<div class="ap2-card-value"><?php echo esc_html( number_format_i18n( $data['human_orders'] ) ); ?></div>
-						<div class="ap2-card-subtitle">
-							<?php echo wp_kses_post( wc_price( $data['human_revenue'] ) ); ?>
-							<?php esc_html_e( 'revenue', 'ap2-gateway' ); ?>
-						</div>
-					</div>
-				</div>
-
-				<div class="ap2-card">
-					<div class="ap2-card-icon">📈</div>
-					<div class="ap2-card-content">
-						<div class="ap2-card-title"><?php esc_html_e( 'Agent Share', 'ap2-gateway' ); ?></div>
-						<div class="ap2-card-value"><?php echo esc_html( $data['agent_percentage'] ); ?>%</div>
-						<div class="ap2-card-subtitle"><?php esc_html_e( 'of total orders', 'ap2-gateway' ); ?></div>
-					</div>
-				</div>
-
-				<div class="ap2-card">
-					<div class="ap2-card-icon">💰</div>
-					<div class="ap2-card-content">
-						<div class="ap2-card-title"><?php esc_html_e( 'Avg Agent Order', 'ap2-gateway' ); ?></div>
-						<div class="ap2-card-value"><?php echo wp_kses_post( wc_price( $data['avg_agent_order'] ) ); ?></div>
-						<div class="ap2-card-subtitle"><?php esc_html_e( 'per transaction', 'ap2-gateway' ); ?></div>
-					</div>
-				</div>
-			</div>
-
-			<!-- Top Agents Table -->
-			<div class="ap2-section">
-				<h2><?php esc_html_e( 'Top Agents', 'ap2-gateway' ); ?></h2>
-				<?php if ( ! empty( $data['top_agents'] ) ) : ?>
-					<table class="wp-list-table widefat fixed striped">
-						<thead>
-							<tr>
-								<th><?php esc_html_e( 'Agent ID', 'ap2-gateway' ); ?></th>
-								<th><?php esc_html_e( 'Orders', 'ap2-gateway' ); ?></th>
-								<th><?php esc_html_e( 'Total Revenue', 'ap2-gateway' ); ?></th>
-								<th><?php esc_html_e( 'Avg Order Value', 'ap2-gateway' ); ?></th>
-								<th><?php esc_html_e( 'Last Order', 'ap2-gateway' ); ?></th>
-							</tr>
-						</thead>
-						<tbody>
-							<?php foreach ( $data['top_agents'] as $agent ) : ?>
+				<div class="woocommerce-table-card__body">
+					<?php if ( ! empty( $data['top_agents'] ) ) : ?>
+						<table class="wp-list-table widefat fixed striped">
+							<thead>
 								<tr>
-									<td>
-										<strong><?php echo esc_html( $agent['agent_id'] ); ?></strong>
-										<?php if ( $agent['is_test'] ) : ?>
-											<span class="ap2-test-badge"><?php esc_html_e( 'TEST', 'ap2-gateway' ); ?></span>
-										<?php endif; ?>
-									</td>
-									<td><?php echo esc_html( $agent['order_count'] ); ?></td>
-									<td><?php echo wp_kses_post( wc_price( $agent['total_revenue'] ) ); ?></td>
-									<td><?php echo wp_kses_post( wc_price( $agent['avg_order'] ) ); ?></td>
-									<td><?php echo esc_html( $agent['last_order_date'] ); ?></td>
+									<th><?php esc_html_e( 'Agent ID', 'ap2-gateway' ); ?></th>
+									<th><?php esc_html_e( 'Orders', 'ap2-gateway' ); ?></th>
+									<th><?php esc_html_e( 'Total Revenue', 'ap2-gateway' ); ?></th>
+									<th><?php esc_html_e( 'Avg Order Value', 'ap2-gateway' ); ?></th>
+									<th><?php esc_html_e( 'Last Order', 'ap2-gateway' ); ?></th>
 								</tr>
-							<?php endforeach; ?>
-						</tbody>
-					</table>
-				<?php else : ?>
-					<div class="notice notice-info inline">
-						<p><?php esc_html_e( 'No agent orders found yet. Agent orders will appear here once AI agents start making purchases.', 'ap2-gateway' ); ?></p>
-					</div>
-				<?php endif; ?>
+							</thead>
+							<tbody>
+								<?php foreach ( $data['top_agents'] as $agent ) : ?>
+									<tr>
+										<td>
+											<strong><?php echo esc_html( $agent['agent_id'] ); ?></strong>
+											<?php if ( $agent['is_test'] ) : ?>
+												<span class="woocommerce-badge woocommerce-badge--warning"><?php esc_html_e( 'TEST', 'ap2-gateway' ); ?></span>
+											<?php endif; ?>
+										</td>
+										<td><?php echo esc_html( $agent['order_count'] ); ?></td>
+										<td><?php echo wp_kses_post( wc_price( $agent['total_revenue'] ) ); ?></td>
+										<td><?php echo wp_kses_post( wc_price( $agent['avg_order'] ) ); ?></td>
+										<td><?php echo esc_html( $agent['last_order_date'] ); ?></td>
+									</tr>
+								<?php endforeach; ?>
+							</tbody>
+						</table>
+					<?php else : ?>
+						<div style="padding: 24px;">
+							<div class="woocommerce-info">
+								<p><?php esc_html_e( 'No agent orders found yet. Agent orders will appear here once AI agents start making purchases.', 'ap2-gateway' ); ?></p>
+							</div>
+						</div>
+					<?php endif; ?>
+				</div>
 			</div>
 
-			<!-- Recent Agent Orders -->
-			<div class="ap2-section">
-				<h2><?php esc_html_e( 'Recent Agent Orders', 'ap2-gateway' ); ?></h2>
-				<?php if ( ! empty( $data['recent_orders'] ) ) : ?>
-					<table class="wp-list-table widefat fixed striped">
-						<thead>
-							<tr>
-								<th><?php esc_html_e( 'Order', 'ap2-gateway' ); ?></th>
-								<th><?php esc_html_e( 'Date', 'ap2-gateway' ); ?></th>
-								<th><?php esc_html_e( 'Agent ID', 'ap2-gateway' ); ?></th>
-								<th><?php esc_html_e( 'Status', 'ap2-gateway' ); ?></th>
-								<th><?php esc_html_e( 'Total', 'ap2-gateway' ); ?></th>
-								<th><?php esc_html_e( 'Actions', 'ap2-gateway' ); ?></th>
-							</tr>
-						</thead>
-						<tbody>
-							<?php foreach ( $data['recent_orders'] as $order ) : ?>
+			<!-- Recent Agent Orders - WooCommerce Table Card Style -->
+			<div class="woocommerce-table-card">
+				<div class="woocommerce-table-card__header">
+					<h2 class="woocommerce-table-card__title"><?php esc_html_e( 'Recent Agent Orders', 'ap2-gateway' ); ?></h2>
+				</div>
+				<div class="woocommerce-table-card__body">
+					<?php if ( ! empty( $data['recent_orders'] ) ) : ?>
+						<table class="wp-list-table widefat fixed striped">
+							<thead>
 								<tr>
-									<td>
-										<a href="<?php echo esc_url( $order['edit_url'] ); ?>">
-											#<?php echo esc_html( $order['order_number'] ); ?>
-										</a>
-									</td>
-									<td><?php echo esc_html( $order['date'] ); ?></td>
-									<td>
-										<?php echo esc_html( $order['agent_id'] ); ?>
-										<?php if ( $order['is_test'] ) : ?>
-											<span class="ap2-test-badge"><?php esc_html_e( 'TEST', 'ap2-gateway' ); ?></span>
-										<?php endif; ?>
-									</td>
-									<td>
-										<mark class="order-status status-<?php echo esc_attr( $order['status'] ); ?>">
-											<span><?php echo esc_html( wc_get_order_status_name( $order['status'] ) ); ?></span>
-										</mark>
-									</td>
-									<td><?php echo wp_kses_post( wc_price( $order['total'] ) ); ?></td>
-									<td>
-										<a href="<?php echo esc_url( $order['edit_url'] ); ?>" class="button button-small">
-											<?php esc_html_e( 'View', 'ap2-gateway' ); ?>
-										</a>
-									</td>
+									<th><?php esc_html_e( 'Order', 'ap2-gateway' ); ?></th>
+									<th><?php esc_html_e( 'Date', 'ap2-gateway' ); ?></th>
+									<th><?php esc_html_e( 'Agent ID', 'ap2-gateway' ); ?></th>
+									<th><?php esc_html_e( 'Status', 'ap2-gateway' ); ?></th>
+									<th><?php esc_html_e( 'Total', 'ap2-gateway' ); ?></th>
+									<th><?php esc_html_e( 'Actions', 'ap2-gateway' ); ?></th>
 								</tr>
-							<?php endforeach; ?>
-						</tbody>
-					</table>
-				<?php else : ?>
-					<div class="notice notice-info inline">
-						<p><?php esc_html_e( 'No recent agent orders.', 'ap2-gateway' ); ?></p>
-					</div>
-				<?php endif; ?>
+							</thead>
+							<tbody>
+								<?php foreach ( $data['recent_orders'] as $order ) : ?>
+									<tr>
+										<td>
+											<a href="<?php echo esc_url( $order['edit_url'] ); ?>">
+												#<?php echo esc_html( $order['order_number'] ); ?>
+											</a>
+										</td>
+										<td><?php echo esc_html( $order['date'] ); ?></td>
+										<td>
+											<?php echo esc_html( $order['agent_id'] ); ?>
+											<?php if ( $order['is_test'] ) : ?>
+												<span class="woocommerce-badge woocommerce-badge--warning"><?php esc_html_e( 'TEST', 'ap2-gateway' ); ?></span>
+											<?php endif; ?>
+										</td>
+										<td>
+											<mark class="order-status status-<?php echo esc_attr( $order['status'] ); ?>">
+												<span><?php echo esc_html( wc_get_order_status_name( $order['status'] ) ); ?></span>
+											</mark>
+										</td>
+										<td><?php echo wp_kses_post( wc_price( $order['total'] ) ); ?></td>
+										<td>
+											<a href="<?php echo esc_url( $order['edit_url'] ); ?>" class="button button-small">
+												<?php esc_html_e( 'View', 'ap2-gateway' ); ?>
+											</a>
+										</td>
+									</tr>
+								<?php endforeach; ?>
+							</tbody>
+						</table>
+					<?php else : ?>
+						<div style="padding: 24px;">
+							<div class="woocommerce-info">
+								<p><?php esc_html_e( 'No recent agent orders.', 'ap2-gateway' ); ?></p>
+							</div>
+						</div>
+					<?php endif; ?>
+				</div>
 			</div>
 		</div>
 
 		<style>
-			.ap2-summary-cards {
+			/* Minimal custom styles - rely on WooCommerce classes */
+			.woocommerce-page .woocommerce-stats-overview {
 				display: grid;
-				grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-				gap: 20px;
-				margin: 20px 0 30px;
+				grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+				gap: 16px;
+				margin: 24px 0;
 			}
 
-			.ap2-card {
+			.woocommerce-stats-overview__item {
 				background: #fff;
-				border: 1px solid #c3c4c7;
-				border-radius: 4px;
+				border: 1px solid #dcdcde;
+				border-radius: 2px;
 				padding: 20px;
-				display: flex;
-				align-items: flex-start;
-				gap: 15px;
-				box-shadow: 0 1px 1px rgba(0,0,0,0.04);
 			}
 
-			.ap2-card-icon {
-				font-size: 32px;
-				line-height: 1;
-			}
-
-			.ap2-card-content {
-				flex: 1;
-			}
-
-			.ap2-card-title {
-				color: #50575e;
+			.woocommerce-stats-overview__label {
+				color: #757575;
 				font-size: 11px;
-				text-transform: uppercase;
 				font-weight: 600;
-				margin-bottom: 5px;
+				text-transform: uppercase;
+				margin: 0 0 8px;
 			}
 
-			.ap2-card-value {
+			.woocommerce-stats-overview__value {
+				color: #1e1e1e;
 				font-size: 24px;
 				font-weight: 400;
-				color: #2c3338;
-				margin-bottom: 5px;
+				line-height: 1.2;
+				margin: 0 0 4px;
 			}
 
-			.ap2-card-subtitle {
-				color: #787c82;
+			.woocommerce-stats-overview__delta {
+				color: #757575;
 				font-size: 13px;
 			}
 
-			.ap2-section {
-				background: #fff;
-				border: 1px solid #c3c4c7;
-				border-radius: 4px;
-				padding: 20px;
-				margin-bottom: 20px;
+			/* Use WooCommerce purple for agent indicators */
+			.ap2-gateway-highlight {
+				color: #7f54b3;
 			}
 
-			.ap2-section h2 {
-				margin-top: 0;
-				padding-bottom: 10px;
+			/* Leverage WooCommerce badge styles */
+			.woocommerce-badge {
+				padding: 2px 8px;
+				border-radius: 2px;
+				font-size: 11px;
+				font-weight: 600;
+				display: inline-block;
+				margin-left: 4px;
+			}
+
+			.woocommerce-badge--warning {
+				background-color: #f0b849;
+				color: #fff;
+			}
+
+			/* WooCommerce table card pattern */
+			.woocommerce-table-card {
+				background: #fff;
+				border: 1px solid #dcdcde;
+				border-radius: 2px;
+				margin-bottom: 24px;
+			}
+
+			.woocommerce-table-card__header {
+				padding: 16px 24px;
 				border-bottom: 1px solid #e0e0e0;
 			}
 
-			.ap2-test-badge {
-				background: #ffb900;
-				color: #fff;
-				padding: 2px 6px;
-				border-radius: 3px;
-				font-size: 10px;
+			.woocommerce-table-card__title {
+				font-size: 16px;
 				font-weight: 600;
-				margin-left: 5px;
+				line-height: 1.2;
+				margin: 0;
 			}
 
-			.notice.inline {
-				margin: 15px 0;
+			.woocommerce-table-card__body {
+				padding: 0;
+			}
+
+			.woocommerce-table-card .wp-list-table {
+				border: 0;
+				box-shadow: none;
+				margin: 0;
+			}
+
+			.woocommerce-info {
+				background: #f0f6fc;
+				border-left: 4px solid #007cba;
+				padding: 12px;
+				margin: 0;
 			}
 		</style>
 		<?php

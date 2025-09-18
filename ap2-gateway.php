@@ -74,6 +74,9 @@ class AP2_Gateway {
 
 		// Add plugin action links.
 		add_filter( 'plugin_action_links_' . AP2_GATEWAY_PLUGIN_BASENAME, array( $this, 'plugin_action_links' ) );
+
+		// Enqueue admin styles.
+		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_styles' ) );
 	}
 
 	/**
@@ -189,6 +192,33 @@ class AP2_Gateway {
 		);
 
 		return array_merge( $plugin_links, $links );
+	}
+
+	/**
+	 * Enqueue admin styles.
+	 *
+	 * @param string $hook_suffix Current admin page.
+	 */
+	public function enqueue_admin_styles( $hook_suffix ) {
+		// Only load on WooCommerce pages.
+		$wc_pages = array(
+			'woocommerce_page_wc-orders',
+			'edit-shop_order',
+			'shop_order',
+			'woocommerce_page_wc-admin',
+			'woocommerce_page_ap2-analytics',
+			'toplevel_page_woocommerce',
+		);
+
+		if ( in_array( $hook_suffix, $wc_pages, true ) || strpos( $hook_suffix, 'woocommerce' ) !== false ) {
+			wp_enqueue_style(
+				'ap2-admin',
+				AP2_GATEWAY_PLUGIN_URL . 'assets/css/admin/ap2-admin.css',
+				array( 'woocommerce_admin_styles' ),
+				AP2_GATEWAY_VERSION,
+				'all'
+			);
+		}
 	}
 
 	/**
