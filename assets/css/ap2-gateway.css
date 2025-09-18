@@ -1,0 +1,43 @@
+/**
+ * AP2 Gateway Styles
+ */
+
+.payment_method_ap2_gateway {
+	padding: 10px;
+}
+
+.payment_method_ap2_gateway label {
+	font-weight: bold;
+}
+
+.payment_method_ap2_gateway .payment_box {
+	background: #f9f9f9;
+	border: 1px solid #e5e5e5;
+	border-radius: 3px;
+	padding: 15px;
+	margin-top: 10px;
+}
+
+.payment_method_ap2_gateway .ap2-gateway-icon {
+	display: inline-block;
+	vertical-align: middle;
+	margin-right: 10px;
+	max-height: 32px;
+}
+
+.ap2-gateway-notice {
+	padding: 10px;
+	margin: 10px 0;
+	border-left: 4px solid #00a0d2;
+	background: #f7f7f7;
+}
+
+.ap2-gateway-notice.error {
+	border-left-color: #dc3232;
+	background: #fbeaea;
+}
+
+.ap2-gateway-notice.success {
+	border-left-color: #46b450;
+	background: #ecf7ed;
+}
