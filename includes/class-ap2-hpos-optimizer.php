@@ -755,6 +755,58 @@ class AP2_HPOS_Optimizer {
 	}
 
 	/**
+	 * Customize order data store for performance.
+	 *
+	 * @param string $classname Data store class name.
+	 * @return string Modified class name.
+	 */
+	public function customize_order_data_store( $classname ) {
+		// Only customize if HPOS is enabled.
+		if ( ! $this->is_hpos_enabled() ) {
+			return $classname;
+		}
+
+		// Use default class but with our optimizations applied via filters.
+		return $classname;
+	}
+
+	/**
+	 * Add custom table data for orders.
+	 *
+	 * @param array $data Order data.
+	 * @param WC_Order $order Order object.
+	 * @param string $context Context.
+	 * @param array $changes Changes.
+	 * @return array Modified data.
+	 */
+	public function add_custom_table_data( $data, $order, $context, $changes ) {
+		// Add agent-specific data to custom index if this is an agent order.
+		if ( $this->is_agent_order( $order ) ) {
+			$this->update_order_index( $order->get_id() );
+		}
+
+		return $data;
+	}
+
+	/**
+	 * Save custom table data for orders.
+	 *
+	 * @param array $data Order data.
+	 * @param WC_Order $order Order object.
+	 * @param string $context Context.
+	 * @param array $changes Changes.
+	 * @return array Modified data.
+	 */
+	public function save_custom_table_data( $data, $order, $context, $changes ) {
+		// Ensure agent data is saved to index.
+		if ( $this->is_agent_order( $order ) ) {
+			$this->update_order_index( $order->get_id() );
+		}
+
+		return $data;
+	}
+
+	/**
 	 * Monitor order query performance.
 	 *
 	 * @param WC_Order_Query $query Query object.

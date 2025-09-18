@@ -357,7 +357,8 @@ class AP2_Agent_Detector {
 		if ( ! is_array( $stats ) ) {
 			return array(
 				'total_visits'    => 0,
-				'unique_agents'   => 0,
+				'unique_agents'   => array(),
+				'unique_agents_count' => 0,
 				'hourly_visits'   => array(),
 				'page_views'      => array(),
 				'last_visit'      => __( 'Never', 'ap2-gateway' ),
@@ -366,7 +367,11 @@ class AP2_Agent_Detector {
 		}
 
 		// Convert unique agents array to count.
-		$stats['unique_agents_count'] = count( $stats['unique_agents'] );
+		if ( isset( $stats['unique_agents'] ) && is_array( $stats['unique_agents'] ) ) {
+			$stats['unique_agents_count'] = count( $stats['unique_agents'] );
+		} else {
+			$stats['unique_agents_count'] = 0;
+		}
 
 		return $stats;
 	}
