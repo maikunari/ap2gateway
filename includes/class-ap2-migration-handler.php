@@ -85,7 +85,8 @@ class AP2_Migration_Handler {
 		global $wpdb;
 
 		// Check for agent orders without HPOS migration flag.
-		$count = $wpdb->get_var( "
+		$count = $wpdb->get_var(
+			"
 			SELECT COUNT(*)
 			FROM {$wpdb->postmeta} pm1
 			LEFT JOIN {$wpdb->postmeta} pm2 ON pm1.post_id = pm2.post_id
@@ -93,7 +94,8 @@ class AP2_Migration_Handler {
 			WHERE pm1.meta_key = '_ap2_is_agent_order'
 			AND pm1.meta_value = 'yes'
 			AND pm2.meta_value IS NULL
-		" );
+		"
+		);
 
 		return $count > 0;
 	}
@@ -110,10 +112,15 @@ class AP2_Migration_Handler {
 		$this->schedule_next_batch();
 
 		// Redirect with success message.
-		wp_safe_redirect( add_query_arg( array(
-			'ap2_migration' => 'started',
-			'_wpnonce' => wp_create_nonce( 'ap2_migration_notice' ),
-		), admin_url( 'admin.php?page=wc-settings' ) ) );
+		wp_safe_redirect(
+			add_query_arg(
+				array(
+					'ap2_migration' => 'started',
+					'_wpnonce'      => wp_create_nonce( 'ap2_migration_notice' ),
+				),
+				admin_url( 'admin.php?page=wc-settings' )
+			)
+		);
 		exit;
 	}
 
@@ -136,7 +143,9 @@ class AP2_Migration_Handler {
 		global $wpdb;
 
 		// Get unmigrated orders.
-		$order_ids = $wpdb->get_col( $wpdb->prepare( "
+		$order_ids = $wpdb->get_col(
+			$wpdb->prepare(
+				"
 			SELECT DISTINCT pm1.post_id
 			FROM {$wpdb->postmeta} pm1
 			LEFT JOIN {$wpdb->postmeta} pm2 ON pm1.post_id = pm2.post_id
@@ -145,7 +154,10 @@ class AP2_Migration_Handler {
 			AND pm1.meta_value = 'yes'
 			AND pm2.meta_value IS NULL
 			LIMIT %d
-		", self::BATCH_SIZE ) );
+		",
+				self::BATCH_SIZE
+			)
+		);
 
 		if ( empty( $order_ids ) ) {
 			// Migration complete.
@@ -206,7 +218,6 @@ class AP2_Migration_Handler {
 			} else {
 				throw new Exception( 'Migration verification failed' );
 			}
-
 		} catch ( Exception $e ) {
 			$this->log_migration_error( $order_id, $e->getMessage() );
 			return false;
@@ -341,23 +352,25 @@ class AP2_Migration_Handler {
 
 		$results = array(
 			'total_orders' => 0,
-			'verified' => 0,
-			'errors' => array(),
+			'verified'     => 0,
+			'errors'       => array(),
 		);
 
 		// Get all migrated orders.
-		$order_ids = $wpdb->get_col( "
+		$order_ids = $wpdb->get_col(
+			"
 			SELECT post_id
 			FROM {$wpdb->postmeta}
 			WHERE meta_key = '_ap2_hpos_migrated'
 			AND meta_value = 'yes'
-		" );
+		"
+		);
 
 		$results['total_orders'] = count( $order_ids );
 
 		foreach ( $order_ids as $order_id ) {
 			if ( $this->verify_order_migration( $order_id ) ) {
-				$results['verified']++;
+				++$results['verified'];
 			} else {
 				$results['errors'][] = $order_id;
 			}
@@ -374,24 +387,27 @@ class AP2_Migration_Handler {
 	 */
 	private function send_completion_notification() {
 		$admin_email = get_option( 'admin_email' );
-		$site_name = get_bloginfo( 'name' );
+		$site_name   = get_bloginfo( 'name' );
 
 		$subject = sprintf( __( '[%s] AP2 Gateway HPOS Migration Complete', 'ap2-gateway' ), $site_name );
 
 		$stats = array(
 			'processed' => get_option( 'ap2_migration_processed', 0 ),
-			'started' => get_option( 'ap2_migration_started' ),
+			'started'   => get_option( 'ap2_migration_started' ),
 			'completed' => get_option( 'ap2_migration_completed' ),
 		);
 
 		$message = sprintf(
-			__( 'The AP2 Gateway HPOS migration has been completed successfully.
+			__(
+				'The AP2 Gateway HPOS migration has been completed successfully.
 
-Orders Migrated: %d
-Started: %s
-Completed: %s
+Orders Migrated: %1$d
+Started: %2$s
+Completed: %3$s
 
-Please verify your agent orders are working correctly.', 'ap2-gateway' ),
+Please verify your agent orders are working correctly.',
+				'ap2-gateway'
+			),
 			$stats['processed'],
 			$stats['started'],
 			$stats['completed']
@@ -452,12 +468,14 @@ Please verify your agent orders are working correctly.', 'ap2-gateway' ),
 		global $wpdb;
 
 		// Get migrated orders.
-		$order_ids = $wpdb->get_col( "
+		$order_ids = $wpdb->get_col(
+			"
 			SELECT post_id
 			FROM {$wpdb->postmeta}
 			WHERE meta_key = '_ap2_hpos_migrated'
 			AND meta_value = 'yes'
-		" );
+		"
+		);
 
 		foreach ( $order_ids as $order_id ) {
 			$order = wc_get_order( $order_id );
@@ -487,7 +505,7 @@ Please verify your agent orders are working correctly.', 'ap2-gateway' ),
 		WP_CLI::line( 'Starting AP2 Gateway HPOS migration...' );
 
 		$batch_size = isset( $assoc_args['batch'] ) ? intval( $assoc_args['batch'] ) : self::BATCH_SIZE;
-		$total = $this->get_total_unmigrated();
+		$total      = $this->get_total_unmigrated();
 
 		WP_CLI::line( sprintf( 'Found %d orders to migrate', $total ) );
 
@@ -559,7 +577,8 @@ Please verify your agent orders are working correctly.', 'ap2-gateway' ),
 	private function get_total_unmigrated() {
 		global $wpdb;
 
-		return $wpdb->get_var( "
+		return $wpdb->get_var(
+			"
 			SELECT COUNT(*)
 			FROM {$wpdb->postmeta} pm1
 			LEFT JOIN {$wpdb->postmeta} pm2 ON pm1.post_id = pm2.post_id
@@ -567,7 +586,8 @@ Please verify your agent orders are working correctly.', 'ap2-gateway' ),
 			WHERE pm1.meta_key = '_ap2_is_agent_order'
 			AND pm1.meta_value = 'yes'
 			AND pm2.meta_value IS NULL
-		" );
+		"
+		);
 	}
 
 	/**
@@ -591,7 +611,7 @@ Please verify your agent orders are working correctly.', 'ap2-gateway' ),
 		error_log( sprintf( 'AP2 Migration Error: Order #%d - %s', $order_id, $error ) );
 
 		// Store error for review.
-		$errors = get_option( 'ap2_migration_errors', array() );
+		$errors              = get_option( 'ap2_migration_errors', array() );
 		$errors[ $order_id ] = array(
 			'error' => $error,
 			'time'  => current_time( 'mysql' ),
@@ -606,7 +626,7 @@ Please verify your agent orders are working correctly.', 'ap2-gateway' ),
 	 */
 	private function is_hpos_enabled() {
 		return class_exists( '\Automattic\WooCommerce\Utilities\OrderUtil' ) &&
-		       OrderUtil::custom_orders_table_usage_is_enabled();
+				OrderUtil::custom_orders_table_usage_is_enabled();
 	}
 }
 

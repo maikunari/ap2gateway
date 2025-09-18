@@ -376,7 +376,7 @@ class AP2_Analytics_Simple {
 		global $wpdb;
 
 		// Get date range.
-		$range = isset( $_GET['range'] ) ? sanitize_text_field( $_GET['range'] ) : '7day';
+		$range     = isset( $_GET['range'] ) ? sanitize_text_field( $_GET['range'] ) : '7day';
 		$date_from = '';
 
 		switch ( $range ) {
@@ -391,24 +391,28 @@ class AP2_Analytics_Simple {
 		}
 
 		// Get agent orders.
-		$agent_orders = wc_get_orders( array(
-			'limit'        => -1,
-			'date_created' => '>=' . $date_from,
-			'meta_key'     => '_ap2_agent_id',
-			'meta_compare' => 'EXISTS',
-			'return'       => 'ids',
-		) );
+		$agent_orders = wc_get_orders(
+			array(
+				'limit'        => -1,
+				'date_created' => '>=' . $date_from,
+				'meta_key'     => '_ap2_agent_id',
+				'meta_compare' => 'EXISTS',
+				'return'       => 'ids',
+			)
+		);
 
 		// Get all orders.
-		$all_orders = wc_get_orders( array(
-			'limit'        => -1,
-			'date_created' => '>=' . $date_from,
-			'return'       => 'ids',
-		) );
+		$all_orders = wc_get_orders(
+			array(
+				'limit'        => -1,
+				'date_created' => '>=' . $date_from,
+				'return'       => 'ids',
+			)
+		);
 
 		// Calculate totals.
 		$agent_revenue = 0;
-		$agent_count = count( $agent_orders );
+		$agent_count   = count( $agent_orders );
 
 		foreach ( $agent_orders as $order_id ) {
 			$order = wc_get_order( $order_id );
@@ -418,7 +422,7 @@ class AP2_Analytics_Simple {
 		}
 
 		$total_revenue = 0;
-		$total_count = count( $all_orders );
+		$total_count   = count( $all_orders );
 
 		foreach ( $all_orders as $order_id ) {
 			$order = wc_get_order( $order_id );
@@ -444,8 +448,8 @@ class AP2_Analytics_Simple {
 							'is_test'    => false,
 						);
 					}
-					$agent_stats[ $agent_id ]['count']++;
-					$agent_stats[ $agent_id ]['revenue'] += $order->get_total();
+					++$agent_stats[ $agent_id ]['count'];
+					$agent_stats[ $agent_id ]['revenue']   += $order->get_total();
 					$agent_stats[ $agent_id ]['last_order'] = $order->get_date_created()->format( 'Y-m-d' );
 
 					$transaction_id = $order->get_meta( '_ap2_transaction_id' );
@@ -456,14 +460,19 @@ class AP2_Analytics_Simple {
 			}
 
 			// Sort by order count.
-			uasort( $agent_stats, function( $a, $b ) {
-				return $b['count'] - $a['count'];
-			} );
+			uasort(
+				$agent_stats,
+				function ( $a, $b ) {
+					return $b['count'] - $a['count'];
+				}
+			);
 
 			// Format top agents.
 			$i = 0;
 			foreach ( $agent_stats as $agent_id => $stats ) {
-				if ( $i >= 10 ) break;
+				if ( $i >= 10 ) {
+					break;
+				}
 				$top_agents_data[] = array(
 					'agent_id'        => $agent_id,
 					'order_count'     => $stats['count'],
@@ -472,18 +481,18 @@ class AP2_Analytics_Simple {
 					'last_order_date' => $stats['last_order'],
 					'is_test'         => $stats['is_test'],
 				);
-				$i++;
+				++$i;
 			}
 		}
 
 		// Get recent orders.
 		$recent_orders_data = array();
-		$recent_order_ids = array_slice( $agent_orders, 0, 10 );
+		$recent_order_ids   = array_slice( $agent_orders, 0, 10 );
 
 		foreach ( $recent_order_ids as $order_id ) {
 			$order = wc_get_order( $order_id );
 			if ( $order ) {
-				$transaction_id = $order->get_meta( '_ap2_transaction_id' );
+				$transaction_id       = $order->get_meta( '_ap2_transaction_id' );
 				$recent_orders_data[] = array(
 					'order_number' => $order->get_order_number(),
 					'date'         => $order->get_date_created()->format( 'Y-m-d H:i' ),
@@ -512,11 +521,15 @@ class AP2_Analytics_Simple {
 	 * Register REST API endpoints.
 	 */
 	public function register_api_endpoints() {
-		register_rest_route( 'ap2/v1', '/analytics/summary', array(
-			'methods'             => 'GET',
-			'callback'            => array( $this, 'get_summary_data' ),
-			'permission_callback' => array( $this, 'check_permissions' ),
-		) );
+		register_rest_route(
+			'ap2/v1',
+			'/analytics/summary',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( $this, 'get_summary_data' ),
+				'permission_callback' => array( $this, 'check_permissions' ),
+			)
+		);
 	}
 
 	/**
@@ -545,9 +558,12 @@ class AP2_Analytics_Simple {
 	 */
 	public function remove_analytics_conflicts( $items ) {
 		// Remove any AP2 items from Analytics menu.
-		return array_filter( $items, function( $item ) {
-			return ! isset( $item['id'] ) || strpos( $item['id'], 'ap2' ) === false;
-		} );
+		return array_filter(
+			$items,
+			function ( $item ) {
+				return ! isset( $item['id'] ) || strpos( $item['id'], 'ap2' ) === false;
+			}
+		);
 	}
 
 	/**
@@ -558,9 +574,12 @@ class AP2_Analytics_Simple {
 	 */
 	public function remove_nav_conflicts( $items ) {
 		// Remove any AP2 items from Analytics navigation.
-		return array_filter( $items, function( $item ) {
-			return ! isset( $item['id'] ) || strpos( $item['id'], 'ap2' ) === false;
-		} );
+		return array_filter(
+			$items,
+			function ( $item ) {
+				return ! isset( $item['id'] ) || strpos( $item['id'], 'ap2' ) === false;
+			}
+		);
 	}
 }
 

@@ -76,11 +76,13 @@ class AP2_Order_Handler {
 
 		// Add order note.
 		if ( isset( $data['note'] ) ) {
-			$order->add_order_note( sprintf(
+			$order->add_order_note(
+				sprintf(
 				/* translators: %s: audit note */
-				__( 'AP2 Agent: %s', 'ap2-gateway' ),
-				$data['note']
-			) );
+					__( 'AP2 Agent: %s', 'ap2-gateway' ),
+					$data['note']
+				)
+			);
 		}
 
 		// Update HPOS index if available.

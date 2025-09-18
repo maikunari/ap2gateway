@@ -43,15 +43,15 @@ class AP2_Agent_Orders_DataStore extends DataStore implements DataStoreInterface
 	 * @var array
 	 */
 	protected $column_types = array(
-		'order_id'          => 'intval',
-		'agent_id'          => 'strval',
-		'date_created'      => 'strval',
-		'total_sales'       => 'floatval',
-		'order_count'       => 'intval',
-		'unique_agents'     => 'intval',
-		'avg_order_value'   => 'floatval',
-		'mandate_count'     => 'intval',
-		'processing_time'   => 'intval',
+		'order_id'        => 'intval',
+		'agent_id'        => 'strval',
+		'date_created'    => 'strval',
+		'total_sales'     => 'floatval',
+		'order_count'     => 'intval',
+		'unique_agents'   => 'intval',
+		'avg_order_value' => 'floatval',
+		'mandate_count'   => 'intval',
+		'processing_time' => 'intval',
 	);
 
 	/**
@@ -108,7 +108,7 @@ class AP2_Agent_Orders_DataStore extends DataStore implements DataStoreInterface
 		$args = wp_parse_args( $args, $defaults );
 
 		// Generate cache key.
-		$cache_key = $this->get_cache_key( $args );
+		$cache_key   = $this->get_cache_key( $args );
 		$cached_data = $this->get_cached_data( $cache_key );
 
 		if ( false !== $cached_data ) {
@@ -155,24 +155,33 @@ class AP2_Agent_Orders_DataStore extends DataStore implements DataStoreInterface
 		global $wpdb;
 
 		if ( ! empty( $args['agent_id'] ) ) {
-			$this->add_sql_clause( 'where', $wpdb->prepare(
-				'AND agent_id = %s',
-				$args['agent_id']
-			) );
+			$this->add_sql_clause(
+				'where',
+				$wpdb->prepare(
+					'AND agent_id = %s',
+					$args['agent_id']
+				)
+			);
 		}
 
 		if ( ! empty( $args['mandate_token'] ) ) {
-			$this->add_sql_clause( 'where', $wpdb->prepare(
-				'AND mandate_token = %s',
-				$args['mandate_token']
-			) );
+			$this->add_sql_clause(
+				'where',
+				$wpdb->prepare(
+					'AND mandate_token = %s',
+					$args['mandate_token']
+				)
+			);
 		}
 
 		if ( ! empty( $args['transaction_type'] ) ) {
-			$this->add_sql_clause( 'where', $wpdb->prepare(
-				'AND transaction_type = %s',
-				$args['transaction_type']
-			) );
+			$this->add_sql_clause(
+				'where',
+				$wpdb->prepare(
+					'AND transaction_type = %s',
+					$args['transaction_type']
+				)
+			);
 		}
 	}
 
@@ -198,11 +207,13 @@ class AP2_Agent_Orders_DataStore extends DataStore implements DataStoreInterface
 		GROUP BY DATE(payment_timestamp)
 		ORDER BY date ASC";
 
-		$results = $wpdb->get_results( $wpdb->prepare(
-			$sql,
-			$args['after'],
-			$args['before']
-		) );
+		$results = $wpdb->get_results(
+			$wpdb->prepare(
+				$sql,
+				$args['after'],
+				$args['before']
+			)
+		);
 
 		return $this->format_revenue_data( $results );
 	}
@@ -239,11 +250,13 @@ class AP2_Agent_Orders_DataStore extends DataStore implements DataStoreInterface
 		WHERE agent_id = %s
 		AND payment_timestamp > DATE_SUB(NOW(), INTERVAL %s)";
 
-		$result = $wpdb->get_row( $wpdb->prepare(
-			$sql,
-			$agent_id,
-			$args['period']
-		) );
+		$result = $wpdb->get_row(
+			$wpdb->prepare(
+				$sql,
+				$agent_id,
+				$args['period']
+			)
+		);
 
 		// Add time series data.
 		$result->time_series = $this->get_agent_time_series( $agent_id, $args['period'] );
@@ -276,11 +289,13 @@ class AP2_Agent_Orders_DataStore extends DataStore implements DataStoreInterface
 		GROUP BY DATE(payment_timestamp)
 		ORDER BY date ASC";
 
-		return $wpdb->get_results( $wpdb->prepare(
-			$sql,
-			$agent_id,
-			$period
-		) );
+		return $wpdb->get_results(
+			$wpdb->prepare(
+				$sql,
+				$agent_id,
+				$period
+			)
+		);
 	}
 
 	/**
@@ -305,9 +320,9 @@ class AP2_Agent_Orders_DataStore extends DataStore implements DataStoreInterface
 		$averages = $wpdb->get_row( $avg_sql );
 
 		return array(
-			'order_value_diff' => ( ( $agent_data->avg_order_value - $averages->avg_order_value ) / $averages->avg_order_value ) * 100,
+			'order_value_diff'     => ( ( $agent_data->avg_order_value - $averages->avg_order_value ) / $averages->avg_order_value ) * 100,
 			'processing_time_diff' => ( ( $agent_data->avg_processing_time - $averages->avg_processing_time ) / $averages->avg_processing_time ) * 100,
-			'performance_score' => $this->calculate_performance_score( $agent_data, $averages ),
+			'performance_score'    => $this->calculate_performance_score( $agent_data, $averages ),
 		);
 	}
 
@@ -353,7 +368,7 @@ class AP2_Agent_Orders_DataStore extends DataStore implements DataStoreInterface
 		$table = $wpdb->prefix . 'ap2_agent_order_index';
 
 		$defaults = array(
-			'limit' => 10,
+			'limit'  => 10,
 			'period' => '30 days',
 		);
 
@@ -373,15 +388,17 @@ class AP2_Agent_Orders_DataStore extends DataStore implements DataStoreInterface
 		ORDER BY usage_count DESC
 		LIMIT %d";
 
-		$results = $wpdb->get_results( $wpdb->prepare(
-			$sql,
-			$args['period'],
-			$args['limit']
-		) );
+		$results = $wpdb->get_results(
+			$wpdb->prepare(
+				$sql,
+				$args['period'],
+				$args['limit']
+			)
+		);
 
 		// Add categorization.
 		foreach ( $results as &$result ) {
-			$result->category = $this->categorize_mandate( $result->mandate_token );
+			$result->category   = $this->categorize_mandate( $result->mandate_token );
 			$result->risk_score = $this->calculate_mandate_risk( $result );
 		}
 
@@ -452,10 +469,10 @@ class AP2_Agent_Orders_DataStore extends DataStore implements DataStoreInterface
 
 		foreach ( $data as $row ) {
 			$formatted[] = array(
-				'date'    => $row->date,
-				'orders'  => intval( $row->orders ),
-				'revenue' => floatval( $row->revenue ),
-				'agents'  => intval( $row->agents ),
+				'date'            => $row->date,
+				'orders'          => intval( $row->orders ),
+				'revenue'         => floatval( $row->revenue ),
+				'agents'          => intval( $row->agents ),
 				'avg_order_value' => $row->orders > 0 ? $row->revenue / $row->orders : 0,
 			);
 		}
@@ -504,26 +521,26 @@ class AP2_Agent_Orders_DataStore extends DataStore implements DataStoreInterface
 			'title'      => 'agent_orders',
 			'type'       => 'object',
 			'properties' => array(
-				'date'           => array(
+				'date'            => array(
 					'description' => __( 'Date', 'ap2-gateway' ),
 					'type'        => 'string',
 					'format'      => 'date',
 					'context'     => array( 'view', 'edit' ),
 					'readonly'    => true,
 				),
-				'order_count'    => array(
+				'order_count'     => array(
 					'description' => __( 'Number of orders', 'ap2-gateway' ),
 					'type'        => 'integer',
 					'context'     => array( 'view', 'edit' ),
 					'readonly'    => true,
 				),
-				'total_sales'    => array(
+				'total_sales'     => array(
 					'description' => __( 'Total sales', 'ap2-gateway' ),
 					'type'        => 'number',
 					'context'     => array( 'view', 'edit' ),
 					'readonly'    => true,
 				),
-				'unique_agents'  => array(
+				'unique_agents'   => array(
 					'description' => __( 'Unique agents', 'ap2-gateway' ),
 					'type'        => 'integer',
 					'context'     => array( 'view', 'edit' ),

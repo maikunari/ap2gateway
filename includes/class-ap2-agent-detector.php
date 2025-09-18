@@ -283,22 +283,22 @@ class AP2_Agent_Detector {
 
 		if ( ! is_array( $stats ) ) {
 			$stats = array(
-				'total_visits'    => 0,
-				'unique_agents'   => array(),
-				'hourly_visits'   => array(),
-				'page_views'      => array(),
-				'last_visit'      => '',
-				'daily_visits'    => array(),
+				'total_visits'  => 0,
+				'unique_agents' => array(),
+				'hourly_visits' => array(),
+				'page_views'    => array(),
+				'last_visit'    => '',
+				'daily_visits'  => array(),
 			);
 		}
 
-		$agent_id = self::get_agent_identifier();
+		$agent_id     = self::get_agent_identifier();
 		$current_hour = gmdate( 'Y-m-d H:00:00' );
 		$current_date = gmdate( 'Y-m-d' );
 		$current_page = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '/';
 
 		// Update total visits.
-		$stats['total_visits']++;
+		++$stats['total_visits'];
 
 		// Track unique agents.
 		if ( ! in_array( $agent_id, $stats['unique_agents'], true ) ) {
@@ -309,19 +309,19 @@ class AP2_Agent_Detector {
 		if ( ! isset( $stats['hourly_visits'][ $current_hour ] ) ) {
 			$stats['hourly_visits'][ $current_hour ] = 0;
 		}
-		$stats['hourly_visits'][ $current_hour ]++;
+		++$stats['hourly_visits'][ $current_hour ];
 
 		// Track daily visits.
 		if ( ! isset( $stats['daily_visits'][ $current_date ] ) ) {
 			$stats['daily_visits'][ $current_date ] = 0;
 		}
-		$stats['daily_visits'][ $current_date ]++;
+		++$stats['daily_visits'][ $current_date ];
 
 		// Track page views.
 		if ( ! isset( $stats['page_views'][ $current_page ] ) ) {
 			$stats['page_views'][ $current_page ] = 0;
 		}
-		$stats['page_views'][ $current_page ]++;
+		++$stats['page_views'][ $current_page ];
 
 		// Update last visit.
 		$stats['last_visit'] = current_time( 'mysql' );
@@ -356,13 +356,13 @@ class AP2_Agent_Detector {
 
 		if ( ! is_array( $stats ) ) {
 			return array(
-				'total_visits'    => 0,
-				'unique_agents'   => array(),
+				'total_visits'        => 0,
+				'unique_agents'       => array(),
 				'unique_agents_count' => 0,
-				'hourly_visits'   => array(),
-				'page_views'      => array(),
-				'last_visit'      => __( 'Never', 'ap2-gateway' ),
-				'daily_visits'    => array(),
+				'hourly_visits'       => array(),
+				'page_views'          => array(),
+				'last_visit'          => __( 'Never', 'ap2-gateway' ),
+				'daily_visits'        => array(),
 			);
 		}
 
@@ -420,7 +420,7 @@ class AP2_Agent_Detector {
 		$is_agent_order = $order->get_meta( '_ap2_is_agent_order' );
 
 		if ( 'yes' === $is_agent_order ) {
-			$agent_id = $order->get_meta( '_ap2_agent_identifier' );
+			$agent_id         = $order->get_meta( '_ap2_agent_identifier' );
 			$detection_method = $order->get_meta( '_ap2_agent_detection_method' );
 			?>
 			<div class="ap2-agent-order-indicator" style="margin-top: 10px; padding: 10px; background: #f0f8ff; border-left: 4px solid #0073aa;">
@@ -489,12 +489,12 @@ class AP2_Agent_Detector {
 		$stats = self::get_statistics();
 
 		return array(
-			'total_visits'    => number_format_i18n( $stats['total_visits'] ),
-			'unique_agents'   => number_format_i18n( $stats['unique_agents_count'] ),
-			'last_visit'      => $stats['last_visit'],
-			'top_pages'       => array_slice( $stats['page_views'], 0, 5, true ),
-			'visits_today'    => isset( $stats['daily_visits'][ gmdate( 'Y-m-d' ) ] ) ? $stats['daily_visits'][ gmdate( 'Y-m-d' ) ] : 0,
-			'visits_24h'      => array_sum( $stats['hourly_visits'] ),
+			'total_visits'  => number_format_i18n( $stats['total_visits'] ),
+			'unique_agents' => number_format_i18n( $stats['unique_agents_count'] ),
+			'last_visit'    => $stats['last_visit'],
+			'top_pages'     => array_slice( $stats['page_views'], 0, 5, true ),
+			'visits_today'  => isset( $stats['daily_visits'][ gmdate( 'Y-m-d' ) ] ) ? $stats['daily_visits'][ gmdate( 'Y-m-d' ) ] : 0,
+			'visits_24h'    => array_sum( $stats['hourly_visits'] ),
 		);
 	}
 }

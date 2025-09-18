@@ -1,4 +1,5 @@
 <?php
+// phpcs:ignore WordPress.Files.FileName.InvalidClassFileName -- Main plugin file.
 /**
  * Plugin Name:       AP2 Gateway for WooCommerce
  * Plugin URI:        https://ap2gateway.com
@@ -15,11 +16,13 @@
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  * WC requires at least: 7.1
  * WC tested up to:   9.0
+ *
+ * @package AP2_Gateway
  */
 
 // If this file is called directly, abort.
-if (!defined('ABSPATH')) {
-    exit;
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
 }
 
 // Define plugin constants.
@@ -278,22 +281,25 @@ register_activation_hook( __FILE__, array( 'AP2_Gateway', 'activate' ) );
 register_deactivation_hook( __FILE__, array( 'AP2_Gateway', 'deactivate' ) );
 
 // Declare HPOS compatibility before WooCommerce initialization.
-add_action( 'before_woocommerce_init', function() {
-	if ( class_exists( '\Automattic\WooCommerce\Utilities\FeaturesUtil' ) ) {
-		\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility(
-			'custom_order_tables',
-			__FILE__,
-			true
-		);
+add_action(
+	'before_woocommerce_init',
+	function () {
+		if ( class_exists( '\Automattic\WooCommerce\Utilities\FeaturesUtil' ) ) {
+			\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility(
+				'custom_order_tables',
+				__FILE__,
+				true
+			);
 
-		// Also declare compatibility with other WooCommerce features.
-		\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility(
-			'cart_checkout_blocks',
-			__FILE__,
-			true
-		);
+			// Also declare compatibility with other WooCommerce features.
+			\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility(
+				'cart_checkout_blocks',
+				__FILE__,
+				true
+			);
+		}
 	}
-});
+);
 
 // Initialize the plugin.
 add_action( 'plugins_loaded', array( 'AP2_Gateway', 'instance' ), 0 );

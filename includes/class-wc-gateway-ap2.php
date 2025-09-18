@@ -104,34 +104,34 @@ class WC_Gateway_AP2 extends WC_Payment_Gateway {
 	 */
 	public function init_form_fields() {
 		$this->form_fields = array(
-			'enabled' => array(
+			'enabled'         => array(
 				'title'   => __( 'Enable/Disable', 'ap2-gateway' ),
 				'type'    => 'checkbox',
 				'label'   => __( 'Enable AP2 Gateway', 'ap2-gateway' ),
 				'default' => 'no',
 			),
-			'title' => array(
+			'title'           => array(
 				'title'       => __( 'Title', 'ap2-gateway' ),
 				'type'        => 'text',
 				'description' => __( 'This controls the title which the user sees during checkout.', 'ap2-gateway' ),
 				'default'     => __( 'Agent Payment (AP2)', 'ap2-gateway' ),
 				'desc_tip'    => true,
 			),
-			'description' => array(
+			'description'     => array(
 				'title'       => __( 'Description', 'ap2-gateway' ),
 				'type'        => 'textarea',
 				'description' => __( 'This controls the description which the user sees during checkout.', 'ap2-gateway' ),
 				'default'     => __( 'Pay using your AI agent credentials via Google\'s AP2 protocol.', 'ap2-gateway' ),
 				'desc_tip'    => true,
 			),
-			'testmode' => array(
+			'testmode'        => array(
 				'title'       => __( 'Test Mode', 'ap2-gateway' ),
 				'type'        => 'checkbox',
 				'label'       => __( 'Enable Test Mode', 'ap2-gateway' ),
 				'default'     => 'yes',
 				'description' => __( 'Enable this to test payments using the sandbox environment.', 'ap2-gateway' ),
 			),
-			'debug' => array(
+			'debug'           => array(
 				'title'       => __( 'Debug Log', 'ap2-gateway' ),
 				'type'        => 'checkbox',
 				'label'       => __( 'Enable logging', 'ap2-gateway' ),
@@ -142,26 +142,26 @@ class WC_Gateway_AP2 extends WC_Payment_Gateway {
 					'<code>' . WC_Log_Handler_File::get_log_file_path( 'ap2-gateway' ) . '</code>'
 				),
 			),
-			'api_details' => array(
+			'api_details'     => array(
 				'title'       => __( 'API Credentials', 'ap2-gateway' ),
 				'type'        => 'title',
 				'description' => __( 'Enter your AP2 API credentials to process payments.', 'ap2-gateway' ),
 			),
-			'api_key' => array(
+			'api_key'         => array(
 				'title'       => __( 'Live API Key', 'ap2-gateway' ),
 				'type'        => 'text',
 				'description' => __( 'Enter your AP2 Live API Key.', 'ap2-gateway' ),
 				'default'     => '',
 				'desc_tip'    => true,
 			),
-			'api_secret' => array(
+			'api_secret'      => array(
 				'title'       => __( 'Live API Secret', 'ap2-gateway' ),
 				'type'        => 'password',
 				'description' => __( 'Enter your AP2 Live API Secret.', 'ap2-gateway' ),
 				'default'     => '',
 				'desc_tip'    => true,
 			),
-			'test_api_key' => array(
+			'test_api_key'    => array(
 				'title'       => __( 'Test API Key', 'ap2-gateway' ),
 				'type'        => 'text',
 				'description' => __( 'Enter your AP2 Test API Key.', 'ap2-gateway' ),
@@ -358,8 +358,10 @@ class WC_Gateway_AP2 extends WC_Payment_Gateway {
 		}
 
 		// Get and sanitize agent credentials.
+		// phpcs:disable WordPress.Security.NonceVerification.Missing -- Nonce verification is handled by WooCommerce checkout.
 		$agent_id      = isset( $_POST['ap2_agent_id'] ) ? sanitize_text_field( wp_unslash( $_POST['ap2_agent_id'] ) ) : '';
 		$mandate_token = isset( $_POST['ap2_mandate_token'] ) ? sanitize_text_field( wp_unslash( $_POST['ap2_mandate_token'] ) ) : '';
+		// phpcs:enable WordPress.Security.NonceVerification.Missing
 
 		// Log payment attempt.
 		$this->log( 'Processing AP2 agent payment for order #' . $order_id );
@@ -375,12 +377,15 @@ class WC_Gateway_AP2 extends WC_Payment_Gateway {
 
 		// Store audit trail.
 		if ( class_exists( 'AP2_Order_Handler' ) ) {
-			AP2_Order_Handler::store_agent_audit_trail( $order, array(
-				'agent_id'       => $agent_id,
-				'mandate_token'  => $mandate_token,
-				'test_mode'      => $this->testmode,
-				'transaction_id' => '',
-			) );
+			AP2_Order_Handler::store_agent_audit_trail(
+				$order,
+				array(
+					'agent_id'       => $agent_id,
+					'mandate_token'  => $mandate_token,
+					'test_mode'      => $this->testmode,
+					'transaction_id' => '',
+				)
+			);
 		}
 
 		// If in test mode, simulate successful payment.
@@ -435,6 +440,7 @@ class WC_Gateway_AP2 extends WC_Payment_Gateway {
 			'order_id'      => $order_id,
 			'agent_id'      => $agent_id,
 			'mandate_token' => $mandate_token,
+			/* translators: %s: Order ID */
 			'description'   => sprintf( __( 'Order #%s', 'ap2-gateway' ), $order_id ),
 			'return_url'    => $this->get_return_url( $order ),
 			'cancel_url'    => wc_get_checkout_url(),

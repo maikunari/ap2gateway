@@ -151,33 +151,45 @@ class AP2_Analytics {
 	 */
 	public function register_routes() {
 		// Main analytics endpoint.
-		register_rest_route( 'wc-analytics', '/reports/ap2-agents', array(
+		register_rest_route(
+			'wc-analytics',
+			'/reports/ap2-agents',
 			array(
-				'methods'             => \WP_REST_Server::READABLE,
-				'callback'            => array( $this, 'get_report_data' ),
-				'permission_callback' => array( $this, 'check_permission' ),
-				'args'                => $this->get_collection_params(),
-			),
-		) );
+				array(
+					'methods'             => \WP_REST_Server::READABLE,
+					'callback'            => array( $this, 'get_report_data' ),
+					'permission_callback' => array( $this, 'check_permission' ),
+					'args'                => $this->get_collection_params(),
+				),
+			)
+		);
 
 		// Stats endpoint.
-		register_rest_route( 'wc-analytics', '/reports/ap2-agents/stats', array(
+		register_rest_route(
+			'wc-analytics',
+			'/reports/ap2-agents/stats',
 			array(
-				'methods'             => \WP_REST_Server::READABLE,
-				'callback'            => array( $this, 'get_stats_data' ),
-				'permission_callback' => array( $this, 'check_permission' ),
-				'args'                => $this->get_collection_params(),
-			),
-		) );
+				array(
+					'methods'             => \WP_REST_Server::READABLE,
+					'callback'            => array( $this, 'get_stats_data' ),
+					'permission_callback' => array( $this, 'check_permission' ),
+					'args'                => $this->get_collection_params(),
+				),
+			)
+		);
 
 		// Top agents endpoint.
-		register_rest_route( 'wc-analytics', '/reports/ap2-agents/top', array(
+		register_rest_route(
+			'wc-analytics',
+			'/reports/ap2-agents/top',
 			array(
-				'methods'             => \WP_REST_Server::READABLE,
-				'callback'            => array( $this, 'get_top_agents' ),
-				'permission_callback' => array( $this, 'check_permission' ),
-			),
-		) );
+				array(
+					'methods'             => \WP_REST_Server::READABLE,
+					'callback'            => array( $this, 'get_top_agents' ),
+					'permission_callback' => array( $this, 'check_permission' ),
+				),
+			)
+		);
 	}
 
 	/**
@@ -187,30 +199,30 @@ class AP2_Analytics {
 	 */
 	private function get_collection_params() {
 		return array(
-			'before'    => array(
+			'before'   => array(
 				'type'        => 'string',
 				'format'      => 'date-time',
 				'description' => __( 'Limit to items before date.', 'ap2-gateway' ),
 			),
-			'after'     => array(
+			'after'    => array(
 				'type'        => 'string',
 				'format'      => 'date-time',
 				'description' => __( 'Limit to items after date.', 'ap2-gateway' ),
 			),
-			'interval'  => array(
+			'interval' => array(
 				'type'        => 'string',
 				'default'     => 'day',
 				'enum'        => array( 'hour', 'day', 'week', 'month', 'quarter', 'year' ),
 				'description' => __( 'Time interval.', 'ap2-gateway' ),
 			),
-			'per_page'  => array(
+			'per_page' => array(
 				'type'        => 'integer',
 				'default'     => 10,
 				'minimum'     => 1,
 				'maximum'     => 100,
 				'description' => __( 'Items per page.', 'ap2-gateway' ),
 			),
-			'page'      => array(
+			'page'     => array(
 				'type'        => 'integer',
 				'default'     => 1,
 				'minimum'     => 1,
@@ -308,8 +320,9 @@ class AP2_Analytics {
 		$before = $args['before'] ? $args['before'] : date( 'Y-m-d' );
 
 		// Get agent orders.
-		$agent_orders = $wpdb->get_results( $wpdb->prepare(
-			"SELECT
+		$agent_orders = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT
 				o.*,
 				m.meta_value as agent_id
 			FROM {$wpdb->prefix}wc_orders o
@@ -319,28 +332,32 @@ class AP2_Analytics {
 				AND o.date_created_gmt <= %s
 				AND o.status IN ('wc-completed', 'wc-processing')
 			ORDER BY o.date_created_gmt DESC",
-			$after,
-			$before . ' 23:59:59'
-		), ARRAY_A );
+				$after,
+				$before . ' 23:59:59'
+			),
+			ARRAY_A
+		);
 
 		// Calculate totals.
-		$total_orders = count( $agent_orders );
+		$total_orders  = count( $agent_orders );
 		$total_revenue = array_sum( array_column( $agent_orders, 'total_amount' ) );
 
 		// Get all orders for comparison.
-		$all_orders_count = $wpdb->get_var( $wpdb->prepare(
-			"SELECT COUNT(*)
+		$all_orders_count = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*)
 			FROM {$wpdb->prefix}wc_orders
 			WHERE date_created_gmt >= %s
 				AND date_created_gmt <= %s
 				AND status IN ('wc-completed', 'wc-processing')",
-			$after,
-			$before . ' 23:59:59'
-		) );
+				$after,
+				$before . ' 23:59:59'
+			)
+		);
 
 		return array(
 			'data' => array(
-				'totals' => array(
+				'totals'    => array(
 					'agent_orders'     => $total_orders,
 					'agent_revenue'    => $total_revenue,
 					'total_orders'     => (int) $all_orders_count,
@@ -377,7 +394,7 @@ class AP2_Analytics {
 	/**
 	 * Group orders by interval.
 	 *
-	 * @param array $orders Orders.
+	 * @param array  $orders Orders.
 	 * @param string $interval Interval type.
 	 * @return array
 	 */
@@ -421,7 +438,7 @@ class AP2_Analytics {
 				);
 			}
 
-			$grouped[ $key ]['subtotals']['agent_orders']++;
+			++$grouped[ $key ]['subtotals']['agent_orders'];
 			$grouped[ $key ]['subtotals']['agent_revenue'] += $order['total_amount'];
 		}
 
@@ -435,8 +452,8 @@ class AP2_Analytics {
 	 * @return array
 	 */
 	public function register_data_stores( $stores ) {
-		$stores['report-ap2-agents']        = 'AP2_Gateway\Admin\AP2_Agents_Data_Store';
-		$stores['report-ap2-agents-stats']  = 'AP2_Gateway\Admin\AP2_Agents_Stats_Data_Store';
+		$stores['report-ap2-agents']       = 'AP2_Gateway\Admin\AP2_Agents_Data_Store';
+		$stores['report-ap2-agents-stats'] = 'AP2_Gateway\Admin\AP2_Agents_Stats_Data_Store';
 		return $stores;
 	}
 
@@ -447,8 +464,8 @@ class AP2_Analytics {
 	 * @return array
 	 */
 	public function register_reports_data_stores( $stores ) {
-		$stores['report-ap2-agents']        = 'AP2_Gateway\Admin\AP2_Agents_Data_Store';
-		$stores['report-ap2-agents-stats']  = 'AP2_Gateway\Admin\AP2_Agents_Stats_Data_Store';
+		$stores['report-ap2-agents']       = 'AP2_Gateway\Admin\AP2_Agents_Data_Store';
+		$stores['report-ap2-agents-stats'] = 'AP2_Gateway\Admin\AP2_Agents_Stats_Data_Store';
 		return $stores;
 	}
 
@@ -460,7 +477,7 @@ class AP2_Analytics {
 			return;
 		}
 
-		$script_path = AP2_GATEWAY_PLUGIN_URL . 'assets/js/admin/analytics.js';
+		$script_path  = AP2_GATEWAY_PLUGIN_URL . 'assets/js/admin/analytics.js';
 		$script_asset = array(
 			'dependencies' => array(
 				'wp-hooks',
@@ -472,7 +489,7 @@ class AP2_Analytics {
 				'wc-currency',
 				'wc-tracks',
 			),
-			'version' => AP2_GATEWAY_VERSION,
+			'version'      => AP2_GATEWAY_VERSION,
 		);
 
 		wp_register_script(
@@ -487,9 +504,9 @@ class AP2_Analytics {
 			'ap2-analytics',
 			'ap2Analytics',
 			array(
-				'currency'     => get_woocommerce_currency_symbol(),
-				'date_format'  => wc_date_format(),
-				'has_orders'   => $this->has_agent_orders(),
+				'currency'    => get_woocommerce_currency_symbol(),
+				'date_format' => wc_date_format(),
+				'has_orders'  => $this->has_agent_orders(),
 			)
 		);
 	}
@@ -515,7 +532,7 @@ class AP2_Analytics {
 
 		// Check cache first.
 		$cache_key = 'ap2_has_agent_orders';
-		$cached = wp_cache_get( $cache_key );
+		$cached    = wp_cache_get( $cache_key );
 
 		if ( false !== $cached ) {
 			return (bool) $cached;
@@ -547,13 +564,15 @@ class AP2_Analytics {
 		}
 
 		if ( class_exists( '\Automattic\WooCommerce\Admin\Features\Navigation\Menu' ) ) {
-			Menu::add_plugin_item( array(
-				'id'         => 'ap2-agent-analytics',
-				'title'      => __( 'AP2 Agents', 'ap2-gateway' ),
-				'capability' => 'view_woocommerce_reports',
-				'url'        => 'admin.php?page=wc-admin&path=/analytics/ap2-agents',
-				'parent'     => 'analytics',
-			) );
+			Menu::add_plugin_item(
+				array(
+					'id'         => 'ap2-agent-analytics',
+					'title'      => __( 'AP2 Agents', 'ap2-gateway' ),
+					'capability' => 'view_woocommerce_reports',
+					'url'        => 'admin.php?page=wc-admin&path=/analytics/ap2-agents',
+					'parent'     => 'analytics',
+				)
+			);
 		}
 	}
 

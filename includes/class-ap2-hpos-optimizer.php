@@ -131,17 +131,17 @@ class AP2_HPOS_Optimizer {
 	 */
 	public function get_agent_orders( $args = array() ) {
 		$defaults = array(
-			'limit'           => 10,
-			'offset'          => 0,
-			'orderby'         => 'date',
-			'order'           => 'DESC',
-			'status'          => 'any',
-			'agent_id'        => '',
-			'mandate_token'   => '',
-			'date_after'      => '',
-			'date_before'     => '',
-			'min_amount'      => 0,
-			'max_amount'      => 0,
+			'limit'            => 10,
+			'offset'           => 0,
+			'orderby'          => 'date',
+			'order'            => 'DESC',
+			'status'           => 'any',
+			'agent_id'         => '',
+			'mandate_token'    => '',
+			'date_after'       => '',
+			'date_before'      => '',
+			'min_amount'       => 0,
+			'max_amount'       => 0,
 			'transaction_type' => '',
 		);
 
@@ -149,7 +149,7 @@ class AP2_HPOS_Optimizer {
 
 		// Check cache first.
 		$cache_key = 'agent_orders_' . md5( serialize( $args ) );
-		$cached = wp_cache_get( $cache_key, self::CACHE_GROUP );
+		$cached    = wp_cache_get( $cache_key, self::CACHE_GROUP );
 
 		if ( false !== $cached ) {
 			return $cached;
@@ -157,11 +157,11 @@ class AP2_HPOS_Optimizer {
 
 		// Build query.
 		$query_args = array(
-			'limit'   => $args['limit'],
-			'offset'  => $args['offset'],
-			'orderby' => $args['orderby'],
-			'order'   => $args['order'],
-			'status'  => $args['status'],
+			'limit'      => $args['limit'],
+			'offset'     => $args['offset'],
+			'orderby'    => $args['orderby'],
+			'order'      => $args['order'],
+			'status'     => $args['status'],
 			'meta_query' => array(
 				array(
 					'key'   => '_ap2_is_agent_order',
@@ -223,20 +223,20 @@ class AP2_HPOS_Optimizer {
 	private function query_with_custom_index( $args ) {
 		global $wpdb;
 
-		$where = array( '1=1' );
+		$where  = array( '1=1' );
 		$values = array();
 
 		// Build WHERE clause.
 		if ( ! empty( $args['meta_query'] ) ) {
 			foreach ( $args['meta_query'] as $meta ) {
 				if ( '_ap2_agent_id' === $meta['key'] ) {
-					$where[] = 'idx.agent_id = %s';
+					$where[]  = 'idx.agent_id = %s';
 					$values[] = $meta['value'];
 				} elseif ( '_ap2_mandate_token' === $meta['key'] ) {
-					$where[] = 'idx.mandate_token = %s';
+					$where[]  = 'idx.mandate_token = %s';
 					$values[] = $meta['value'];
 				} elseif ( '_ap2_transaction_type' === $meta['key'] ) {
-					$where[] = 'idx.transaction_type = %s';
+					$where[]  = 'idx.transaction_type = %s';
 					$values[] = $meta['value'];
 				}
 			}
@@ -272,19 +272,19 @@ class AP2_HPOS_Optimizer {
 	 */
 	public function get_agent_statistics( $period = 'month' ) {
 		$cache_key = 'agent_stats_' . $period;
-		$stats = wp_cache_get( $cache_key, self::CACHE_GROUP );
+		$stats     = wp_cache_get( $cache_key, self::CACHE_GROUP );
 
 		if ( false !== $stats ) {
 			return $stats;
 		}
 
 		$stats = array(
-			'total_orders'      => 0,
-			'total_revenue'     => 0,
-			'unique_agents'     => 0,
-			'avg_order_value'   => 0,
-			'top_agents'        => array(),
-			'mandate_breakdown' => array(),
+			'total_orders'        => 0,
+			'total_revenue'       => 0,
+			'unique_agents'       => 0,
+			'avg_order_value'     => 0,
+			'top_agents'          => array(),
+			'mandate_breakdown'   => array(),
 			'hourly_distribution' => array(),
 		);
 
@@ -292,29 +292,31 @@ class AP2_HPOS_Optimizer {
 		$date_after = '-1 ' . $period;
 
 		// Get orders.
-		$orders = $this->get_agent_orders( array(
-			'limit'      => -1,
-			'date_after' => $date_after,
-		) );
+		$orders = $this->get_agent_orders(
+			array(
+				'limit'      => -1,
+				'date_after' => $date_after,
+			)
+		);
 
-		$agents = array();
+		$agents   = array();
 		$mandates = array();
 
 		foreach ( $orders as $order ) {
-			$stats['total_orders']++;
+			++$stats['total_orders'];
 			$stats['total_revenue'] += $order->get_total();
 
-			$agent_id = $order->get_meta( '_ap2_agent_id' );
+			$agent_id      = $order->get_meta( '_ap2_agent_id' );
 			$mandate_token = $order->get_meta( '_ap2_mandate_token' );
 
 			// Track unique agents.
 			if ( ! isset( $agents[ $agent_id ] ) ) {
 				$agents[ $agent_id ] = array(
-					'count' => 0,
+					'count'   => 0,
 					'revenue' => 0,
 				);
 			}
-			$agents[ $agent_id ]['count']++;
+			++$agents[ $agent_id ]['count'];
 			$agents[ $agent_id ]['revenue'] += $order->get_total();
 
 			// Track mandate types.
@@ -322,26 +324,29 @@ class AP2_HPOS_Optimizer {
 			if ( ! isset( $mandates[ $mandate_type ] ) ) {
 				$mandates[ $mandate_type ] = 0;
 			}
-			$mandates[ $mandate_type ]++;
+			++$mandates[ $mandate_type ];
 
 			// Track hourly distribution.
 			$hour = $order->get_date_created()->format( 'H' );
 			if ( ! isset( $stats['hourly_distribution'][ $hour ] ) ) {
 				$stats['hourly_distribution'][ $hour ] = 0;
 			}
-			$stats['hourly_distribution'][ $hour ]++;
+			++$stats['hourly_distribution'][ $hour ];
 		}
 
 		// Calculate statistics.
-		$stats['unique_agents'] = count( $agents );
+		$stats['unique_agents']   = count( $agents );
 		$stats['avg_order_value'] = $stats['total_orders'] > 0
 			? $stats['total_revenue'] / $stats['total_orders']
 			: 0;
 
 		// Get top agents.
-		uasort( $agents, function( $a, $b ) {
-			return $b['revenue'] - $a['revenue'];
-		} );
+		uasort(
+			$agents,
+			function ( $a, $b ) {
+				return $b['revenue'] - $a['revenue'];
+			}
+		);
 		$stats['top_agents'] = array_slice( $agents, 0, 5, true );
 
 		$stats['mandate_breakdown'] = $mandates;
@@ -421,11 +426,15 @@ class AP2_HPOS_Optimizer {
 		$chunks = array_chunk( $order_ids, 25 );
 
 		foreach ( $chunks as $chunk ) {
-			as_enqueue_async_action( 'ap2_process_batch_update', array(
-				'order_ids' => $chunk,
-				'data'      => $data,
-				'operation' => $operation,
-			), 'ap2_batch_operations' );
+			as_enqueue_async_action(
+				'ap2_process_batch_update',
+				array(
+					'order_ids' => $chunk,
+					'data'      => $data,
+					'operation' => $operation,
+				),
+				'ap2_batch_operations'
+			);
 		}
 
 		return true;
@@ -466,15 +475,17 @@ class AP2_HPOS_Optimizer {
 	 */
 	public function process_agent_analytics_batch() {
 		// Get unprocessed agent orders.
-		$orders = $this->get_agent_orders( array(
-			'limit' => 100,
-			'meta_query' => array(
-				array(
-					'key'     => '_ap2_analytics_processed',
-					'compare' => 'NOT EXISTS',
+		$orders = $this->get_agent_orders(
+			array(
+				'limit'      => 100,
+				'meta_query' => array(
+					array(
+						'key'     => '_ap2_analytics_processed',
+						'compare' => 'NOT EXISTS',
+					),
 				),
-			),
-		) );
+			)
+		);
 
 		foreach ( $orders as $order ) {
 			// Process analytics.
@@ -496,7 +507,7 @@ class AP2_HPOS_Optimizer {
 	 */
 	private function process_order_analytics( $order ) {
 		// Calculate processing time.
-		$created = $order->get_date_created();
+		$created   = $order->get_date_created();
 		$completed = $order->get_date_completed();
 
 		if ( $created && $completed ) {
@@ -517,7 +528,9 @@ class AP2_HPOS_Optimizer {
 		// Update daily statistics.
 		$today = current_time( 'Y-m-d' );
 
-		$daily_stats = $wpdb->get_row( $wpdb->prepare( "
+		$daily_stats = $wpdb->get_row(
+			$wpdb->prepare(
+				"
 			SELECT
 				COUNT(*) as order_count,
 				SUM(total_amount) as total_revenue,
@@ -525,7 +538,10 @@ class AP2_HPOS_Optimizer {
 				COUNT(DISTINCT agent_id) as unique_agents
 			FROM {$this->custom_table}
 			WHERE DATE(payment_timestamp) = %s
-		", $today ) );
+		",
+				$today
+			)
+		);
 
 		// Store in options or custom table.
 		update_option( 'ap2_daily_stats_' . $today, $daily_stats );
@@ -563,7 +579,7 @@ class AP2_HPOS_Optimizer {
 		global $wpdb;
 
 		$cache_key = "top_agents_{$limit}_{$metric}";
-		$cached = wp_cache_get( $cache_key, self::CACHE_GROUP );
+		$cached    = wp_cache_get( $cache_key, self::CACHE_GROUP );
 
 		if ( false !== $cached ) {
 			return $cached;
@@ -571,7 +587,9 @@ class AP2_HPOS_Optimizer {
 
 		$order_by = 'revenue' === $metric ? 'SUM(total_amount)' : 'COUNT(*)';
 
-		$results = $wpdb->get_results( $wpdb->prepare( "
+		$results = $wpdb->get_results(
+			$wpdb->prepare(
+				"
 			SELECT
 				agent_id,
 				COUNT(*) as order_count,
@@ -583,7 +601,10 @@ class AP2_HPOS_Optimizer {
 			GROUP BY agent_id
 			ORDER BY {$order_by} DESC
 			LIMIT %d
-		", $limit ) );
+		",
+				$limit
+			)
+		);
 
 		wp_cache_set( $cache_key, $results, self::CACHE_GROUP, self::CACHE_EXPIRATION );
 
@@ -625,7 +646,7 @@ class AP2_HPOS_Optimizer {
 	 */
 	private function is_hpos_enabled() {
 		return class_exists( '\Automattic\WooCommerce\Utilities\OrderUtil' ) &&
-		       OrderUtil::custom_orders_table_usage_is_enabled();
+				OrderUtil::custom_orders_table_usage_is_enabled();
 	}
 
 	/**
@@ -680,7 +701,7 @@ class AP2_HPOS_Optimizer {
 	 * @return array Modified actions.
 	 */
 	public function add_agent_bulk_actions( $actions ) {
-		$actions['ap2_reindex'] = __( 'Reindex Agent Orders', 'ap2-gateway' );
+		$actions['ap2_reindex']       = __( 'Reindex Agent Orders', 'ap2-gateway' );
 		$actions['ap2_export_agents'] = __( 'Export Agent Data', 'ap2-gateway' );
 		return $actions;
 	}
@@ -690,7 +711,7 @@ class AP2_HPOS_Optimizer {
 	 *
 	 * @param string $redirect_to Redirect URL.
 	 * @param string $doaction Action being performed.
-	 * @param array $order_ids Order IDs.
+	 * @param array  $order_ids Order IDs.
 	 * @return string Redirect URL.
 	 */
 	public function handle_agent_bulk_actions( $redirect_to, $doaction, $order_ids ) {
@@ -716,19 +737,19 @@ class AP2_HPOS_Optimizer {
 			$order = wc_get_order( $order_id );
 			if ( $order && $this->is_agent_order( $order ) ) {
 				$data[] = array(
-					'order_id' => $order_id,
-					'agent_id' => $order->get_meta( '_ap2_agent_id' ),
-					'mandate_token' => $order->get_meta( '_ap2_mandate_token' ),
+					'order_id'       => $order_id,
+					'agent_id'       => $order->get_meta( '_ap2_agent_id' ),
+					'mandate_token'  => $order->get_meta( '_ap2_mandate_token' ),
 					'transaction_id' => $order->get_meta( '_ap2_transaction_id' ),
-					'total' => $order->get_total(),
-					'date' => $order->get_date_created()->format( 'Y-m-d H:i:s' ),
+					'total'          => $order->get_total(),
+					'date'           => $order->get_date_created()->format( 'Y-m-d H:i:s' ),
 				);
 			}
 		}
 
 		if ( ! empty( $data ) ) {
 			header( 'Content-Type: text/csv' );
-			header( 'Content-Disposition: attachment; filename="agent-orders-' . date('Y-m-d') . '.csv"' );
+			header( 'Content-Disposition: attachment; filename="agent-orders-' . date( 'Y-m-d' ) . '.csv"' );
 			$output = fopen( 'php://output', 'w' );
 			fputcsv( $output, array_keys( $data[0] ) );
 			foreach ( $data as $row ) {
@@ -768,9 +789,9 @@ class AP2_HPOS_Optimizer {
 	/**
 	 * Add custom table data for orders.
 	 *
-	 * @param array $data Order data.
+	 * @param array    $data Order data.
 	 * @param WC_Order $order Order object.
-	 * @param string $context Context.
+	 * @param string   $context Context.
 	 * @return array Modified data.
 	 */
 	public function add_custom_table_data( $data, $order, $context ) {
@@ -785,9 +806,9 @@ class AP2_HPOS_Optimizer {
 	/**
 	 * Save custom table data for orders.
 	 *
-	 * @param array $data Order data.
+	 * @param array    $data Order data.
 	 * @param WC_Order $order Order object.
-	 * @param string $context Context.
+	 * @param string   $context Context.
 	 * @return array Modified data.
 	 */
 	public function save_custom_table_data( $data, $order, $context ) {
@@ -798,7 +819,6 @@ class AP2_HPOS_Optimizer {
 
 		return $data;
 	}
-
 }
 
 // Initialize optimizer.

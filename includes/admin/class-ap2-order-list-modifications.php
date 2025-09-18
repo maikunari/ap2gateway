@@ -100,7 +100,7 @@ class AP2_Order_List_Modifications {
 		foreach ( $columns as $key => $column ) {
 			// Add after order number.
 			if ( 'order_number' === $key ) {
-				$new_columns[ $key ] = $column;
+				$new_columns[ $key ]       = $column;
 				$new_columns['order_type'] = '<span class="ap2-column-header" title="' . esc_attr__( 'Order Type', 'ap2-gateway' ) . '">👤</span>';
 			} else {
 				$new_columns[ $key ] = $column;
@@ -114,7 +114,7 @@ class AP2_Order_List_Modifications {
 	 * Render order type column.
 	 *
 	 * @param string $column Column ID.
-	 * @param int $order_id Order ID.
+	 * @param int    $order_id Order ID.
 	 */
 	public function render_order_type_column( $column, $order_id ) {
 		if ( 'order_type' !== $column ) {
@@ -132,7 +132,7 @@ class AP2_Order_List_Modifications {
 	/**
 	 * Render order type column for HPOS.
 	 *
-	 * @param string $column Column ID.
+	 * @param string    $column Column ID.
 	 * @param \WC_Order $order Order object.
 	 */
 	public function render_order_type_column_hpos( $column, $order ) {
@@ -154,7 +154,7 @@ class AP2_Order_List_Modifications {
 
 		if ( $is_agent ) {
 			$transaction_id = $order->get_meta( '_ap2_transaction_id' );
-			$is_test = strpos( $transaction_id, 'TEST-' ) === 0;
+			$is_test        = strpos( $transaction_id, 'TEST-' ) === 0;
 
 			?>
 			<div class="ap2-gateway-order-type">
@@ -267,9 +267,9 @@ class AP2_Order_List_Modifications {
 	/**
 	 * Filter orders query for HPOS.
 	 *
-	 * @param array $clauses SQL clauses.
+	 * @param array  $clauses SQL clauses.
 	 * @param object $query Query object.
-	 * @param array $args Query arguments.
+	 * @param array  $args Query arguments.
 	 * @return array
 	 */
 	public function filter_orders_query_hpos( $clauses, $query, $args ) {
@@ -281,8 +281,8 @@ class AP2_Order_List_Modifications {
 		$order_type = sanitize_text_field( wp_unslash( $_GET['order_type'] ) );
 
 		if ( 'agent' === $order_type ) {
-			$clauses['join'] .= " LEFT JOIN {$wpdb->prefix}wc_orders_meta ap2m ON {$wpdb->prefix}wc_orders.id = ap2m.order_id";
-			$clauses['where'] .= " AND (ap2m.meta_key = '_ap2_agent_id' OR {$wpdb->prefix}wc_orders.payment_method = 'ap2_gateway')";
+			$clauses['join']   .= " LEFT JOIN {$wpdb->prefix}wc_orders_meta ap2m ON {$wpdb->prefix}wc_orders.id = ap2m.order_id";
+			$clauses['where']  .= " AND (ap2m.meta_key = '_ap2_agent_id' OR {$wpdb->prefix}wc_orders.payment_method = 'ap2_gateway')";
 			$clauses['groupby'] = "{$wpdb->prefix}wc_orders.id";
 		} elseif ( 'human' === $order_type ) {
 			$clauses['where'] .= " AND {$wpdb->prefix}wc_orders.payment_method != 'ap2_gateway'";
@@ -299,9 +299,9 @@ class AP2_Order_List_Modifications {
 	/**
 	 * Add order row class.
 	 *
-	 * @param array $classes Classes.
+	 * @param array  $classes Classes.
 	 * @param string $class Class.
-	 * @param int $post_id Post ID.
+	 * @param int    $post_id Post ID.
 	 * @return array
 	 */
 	public function add_order_row_class( $classes, $class, $post_id ) {
@@ -326,7 +326,7 @@ class AP2_Order_List_Modifications {
 			return;
 		}
 
-		$mandate_token = $order->get_meta( '_ap2_mandate_token' );
+		$mandate_token  = $order->get_meta( '_ap2_mandate_token' );
 		$transaction_id = $order->get_meta( '_ap2_transaction_id' );
 		?>
 		<div class="ap2-agent-info" style="margin: 10px 0; padding: 10px; background: #f0f8ff; border-left: 4px solid #0073aa;">
@@ -341,7 +341,6 @@ class AP2_Order_List_Modifications {
 		</div>
 		<?php
 	}
-
 }
 
 // Initialize only if in admin.
