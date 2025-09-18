@@ -143,13 +143,16 @@ class AP2_Gateway {
 		// Initialize agent detector.
 		AP2_Agent_Detector::instance();
 
-		// Load WooCommerce integrations.
+		// Load admin features.
 		if ( is_admin() ) {
-			// Analytics integration for WooCommerce Admin.
-			require_once AP2_GATEWAY_PLUGIN_DIR . 'includes/class-ap2-analytics-integration.php';
+			// WooCommerce Analytics integration.
+			require_once AP2_GATEWAY_PLUGIN_DIR . 'includes/admin/class-ap2-analytics.php';
 
-			// Orders screen integration.
-			require_once AP2_GATEWAY_PLUGIN_DIR . 'includes/class-ap2-orders-integration.php';
+			// Order list modifications.
+			require_once AP2_GATEWAY_PLUGIN_DIR . 'includes/admin/class-ap2-order-list-modifications.php';
+
+			// Keep simple analytics as fallback.
+			require_once AP2_GATEWAY_PLUGIN_DIR . 'includes/admin/class-ap2-analytics-simple.php';
 		}
 
 		// Load HPOS features if WooCommerce supports it.

@@ -91,8 +91,8 @@ class AP2_HPOS_Optimizer {
 		}
 
 		// Add custom columns to orders table for frequently accessed agent data.
-		add_filter( 'woocommerce_orders_table_datastore_extra_db_rows_for_order', array( $this, 'add_custom_table_data' ), 10, 4 );
-		add_filter( 'woocommerce_orders_table_datastore_db_rows_for_order', array( $this, 'save_custom_table_data' ), 10, 4 );
+		add_filter( 'woocommerce_orders_table_datastore_extra_db_rows_for_order', array( $this, 'add_custom_table_data' ), 10, 3 );
+		add_filter( 'woocommerce_orders_table_datastore_db_rows_for_order', array( $this, 'save_custom_table_data' ), 10, 3 );
 	}
 
 	/**
@@ -771,10 +771,9 @@ class AP2_HPOS_Optimizer {
 	 * @param array $data Order data.
 	 * @param WC_Order $order Order object.
 	 * @param string $context Context.
-	 * @param array $changes Changes.
 	 * @return array Modified data.
 	 */
-	public function add_custom_table_data( $data, $order, $context, $changes ) {
+	public function add_custom_table_data( $data, $order, $context ) {
 		// Add agent-specific data to custom index if this is an agent order.
 		if ( $this->is_agent_order( $order ) ) {
 			$this->update_order_index( $order->get_id() );
@@ -789,10 +788,9 @@ class AP2_HPOS_Optimizer {
 	 * @param array $data Order data.
 	 * @param WC_Order $order Order object.
 	 * @param string $context Context.
-	 * @param array $changes Changes.
 	 * @return array Modified data.
 	 */
-	public function save_custom_table_data( $data, $order, $context, $changes ) {
+	public function save_custom_table_data( $data, $order, $context ) {
 		// Ensure agent data is saved to index.
 		if ( $this->is_agent_order( $order ) ) {
 			$this->update_order_index( $order->get_id() );
