@@ -356,17 +356,40 @@ class WC_Gateway_AP2 extends WC_Payment_Gateway {
 		$this->log( 'Processing AP2 agent payment for order #' . $order_id );
 		$this->log( 'Agent ID: ' . $agent_id );
 
-		// Store agent data as order meta.
+		// Store comprehensive agent data as order meta.
+		$order->update_meta_data( '_ap2_is_agent_order', 'yes' );
 		$order->update_meta_data( '_ap2_agent_id', $agent_id );
 		$order->update_meta_data( '_ap2_mandate_token', $mandate_token );
+		$order->update_meta_data( '_ap2_transaction_type', 'agent_payment' );
 		$order->update_meta_data( '_ap2_payment_method', 'agent_payment' );
 		$order->update_meta_data( '_ap2_payment_timestamp', current_time( 'mysql' ) );
+
+		// Store audit trail.
+		if ( class_exists( 'AP2_Order_Handler' ) ) {
+			AP2_Order_Handler::store_agent_audit_trail( $order, array(
+				'agent_id'       => $agent_id,
+				'mandate_token'  => $mandate_token,
+				'test_mode'      => $this->testmode,
+				'transaction_id' => '',
+			) );
+		}
 
 		// If in test mode, simulate successful payment.
 		if ( $this->testmode ) {
 			// Generate test transaction ID.
 			$transaction_id = 'TEST-' . strtoupper( uniqid() );
 			$order->update_meta_data( '_ap2_transaction_id', $transaction_id );
+
+			// Update audit trail with transaction ID.
+			if ( class_exists( 'AP2_Order_Handler' ) ) {
+				$audit_data = array(
+					'agent_id'       => $agent_id,
+					'mandate_token'  => $mandate_token,
+					'test_mode'      => true,
+					'transaction_id' => $transaction_id,
+				);
+				AP2_Order_Handler::store_agent_audit_trail( $order, $audit_data );
+			}
 
 			// Mark order as processing.
 			$order->update_status( 'processing', __( 'AP2 agent payment completed (Test Mode)', 'ap2-gateway' ) );
@@ -433,6 +456,17 @@ class WC_Gateway_AP2 extends WC_Payment_Gateway {
 		if ( ! empty( $response['success'] ) && ! empty( $response['transaction_id'] ) ) {
 			// Save transaction ID.
 			$order->update_meta_data( '_ap2_transaction_id', sanitize_text_field( $response['transaction_id'] ) );
+
+			// Update audit trail with real transaction.
+			if ( class_exists( 'AP2_Order_Handler' ) ) {
+				$audit_data = array(
+					'agent_id'       => $agent_id,
+					'mandate_token'  => $mandate_token,
+					'test_mode'      => false,
+					'transaction_id' => $response['transaction_id'],
+				);
+				AP2_Order_Handler::store_agent_audit_trail( $order, $audit_data );
+			}
 
 			// Mark order as processing.
 			$order->update_status( 'processing', __( 'AP2 agent payment completed', 'ap2-gateway' ) );

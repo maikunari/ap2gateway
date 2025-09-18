@@ -82,8 +82,6 @@ class AP2_Admin_Dashboard {
 	 * @return array Statistics data.
 	 */
 	private function get_transaction_statistics() {
-		global $wpdb;
-
 		$stats = array(
 			'total_agent_orders'    => 0,
 			'total_agent_revenue'   => 0,
@@ -96,56 +94,115 @@ class AP2_Admin_Dashboard {
 			'agent_order_statuses'  => array(),
 		);
 
-		// Get all orders with AP2 agent meta.
-		$agent_orders = $wpdb->get_results(
-			"
-			SELECT p.ID, p.post_date, pm.meta_value as total, p.post_status
-			FROM {$wpdb->posts} p
-			INNER JOIN {$wpdb->postmeta} pm1 ON p.ID = pm1.post_id
-			LEFT JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id AND pm.meta_key = '_order_total'
-			WHERE p.post_type = 'shop_order'
-			AND pm1.meta_key = '_ap2_is_agent_order'
-			AND pm1.meta_value = 'yes'
-			ORDER BY p.post_date DESC
-			"
-		);
+		// Check if HPOS is enabled.
+		$is_hpos_enabled = class_exists( '\Automattic\WooCommerce\Utilities\OrderUtil' ) &&
+		                   \Automattic\WooCommerce\Utilities\OrderUtil::custom_orders_table_usage_is_enabled();
 
-		// Calculate agent statistics.
-		foreach ( $agent_orders as $order ) {
-			$stats['total_agent_orders']++;
-			$stats['total_agent_revenue'] += floatval( $order->total );
+		if ( $is_hpos_enabled ) {
+			// Use HPOS-compatible queries.
+			$agent_orders = wc_get_orders( array(
+				'limit'      => -1,
+				'meta_key'   => '_ap2_is_agent_order',
+				'meta_value' => 'yes',
+				'orderby'    => 'date',
+				'order'      => 'DESC',
+				'return'     => 'objects',
+			) );
 
-			// Track order statuses.
-			$status = str_replace( 'wc-', '', $order->post_status );
-			if ( ! isset( $stats['agent_order_statuses'][ $status ] ) ) {
-				$stats['agent_order_statuses'][ $status ] = 0;
+			// Process agent orders.
+			foreach ( $agent_orders as $order ) {
+				$stats['total_agent_orders']++;
+				$stats['total_agent_revenue'] += floatval( $order->get_total() );
+
+				// Track order statuses.
+				$status = $order->get_status();
+				if ( ! isset( $stats['agent_order_statuses'][ $status ] ) ) {
+					$stats['agent_order_statuses'][ $status ] = 0;
+				}
+				$stats['agent_order_statuses'][ $status ]++;
+
+				// Track monthly revenue.
+				$month = $order->get_date_created()->format( 'Y-m' );
+				if ( ! isset( $stats['monthly_revenue'][ $month ] ) ) {
+					$stats['monthly_revenue'][ $month ] = array(
+						'agent' => 0,
+						'human' => 0,
+					);
+				}
+				$stats['monthly_revenue'][ $month ]['agent'] += floatval( $order->get_total() );
 			}
-			$stats['agent_order_statuses'][ $status ]++;
 
-			// Track monthly revenue.
-			$month = gmdate( 'Y-m', strtotime( $order->post_date ) );
-			if ( ! isset( $stats['monthly_revenue'][ $month ] ) ) {
-				$stats['monthly_revenue'][ $month ] = array(
-					'agent' => 0,
-					'human' => 0,
-				);
+			// Get all orders for totals.
+			$all_orders = wc_get_orders( array(
+				'limit'   => -1,
+				'status'  => array( 'completed', 'processing', 'pending', 'on-hold' ),
+				'return'  => 'objects',
+			) );
+
+			$total_orders_count = count( $all_orders );
+			$total_orders_revenue = 0;
+
+			foreach ( $all_orders as $order ) {
+				$total_orders_revenue += floatval( $order->get_total() );
 			}
-			$stats['monthly_revenue'][ $month ]['agent'] += floatval( $order->total );
+
+			$stats['total_human_orders']  = $total_orders_count - $stats['total_agent_orders'];
+			$stats['total_human_revenue'] = $total_orders_revenue - $stats['total_agent_revenue'];
+
+		} else {
+			// Legacy database queries for non-HPOS.
+			global $wpdb;
+
+			$agent_orders = $wpdb->get_results(
+				"
+				SELECT p.ID, p.post_date, pm.meta_value as total, p.post_status
+				FROM {$wpdb->posts} p
+				INNER JOIN {$wpdb->postmeta} pm1 ON p.ID = pm1.post_id
+				LEFT JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id AND pm.meta_key = '_order_total'
+				WHERE p.post_type = 'shop_order'
+				AND pm1.meta_key = '_ap2_is_agent_order'
+				AND pm1.meta_value = 'yes'
+				ORDER BY p.post_date DESC
+				"
+			);
+
+			// Calculate agent statistics.
+			foreach ( $agent_orders as $order ) {
+				$stats['total_agent_orders']++;
+				$stats['total_agent_revenue'] += floatval( $order->total );
+
+				// Track order statuses.
+				$status = str_replace( 'wc-', '', $order->post_status );
+				if ( ! isset( $stats['agent_order_statuses'][ $status ] ) ) {
+					$stats['agent_order_statuses'][ $status ] = 0;
+				}
+				$stats['agent_order_statuses'][ $status ]++;
+
+				// Track monthly revenue.
+				$month = gmdate( 'Y-m', strtotime( $order->post_date ) );
+				if ( ! isset( $stats['monthly_revenue'][ $month ] ) ) {
+					$stats['monthly_revenue'][ $month ] = array(
+						'agent' => 0,
+						'human' => 0,
+					);
+				}
+				$stats['monthly_revenue'][ $month ]['agent'] += floatval( $order->total );
+			}
+
+			// Get total orders count (human orders).
+			$total_orders = $wpdb->get_row(
+				"
+				SELECT COUNT(*) as count, SUM(pm.meta_value) as total
+				FROM {$wpdb->posts} p
+				LEFT JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id AND pm.meta_key = '_order_total'
+				WHERE p.post_type = 'shop_order'
+				AND p.post_status IN ('wc-completed', 'wc-processing', 'wc-pending', 'wc-on-hold')
+				"
+			);
+
+			$stats['total_human_orders']  = $total_orders->count - $stats['total_agent_orders'];
+			$stats['total_human_revenue'] = floatval( $total_orders->total ) - $stats['total_agent_revenue'];
 		}
-
-		// Get total orders count (human orders).
-		$total_orders = $wpdb->get_row(
-			"
-			SELECT COUNT(*) as count, SUM(pm.meta_value) as total
-			FROM {$wpdb->posts} p
-			LEFT JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id AND pm.meta_key = '_order_total'
-			WHERE p.post_type = 'shop_order'
-			AND p.post_status IN ('wc-completed', 'wc-processing', 'wc-pending', 'wc-on-hold')
-			"
-		);
-
-		$stats['total_human_orders']  = $total_orders->count - $stats['total_agent_orders'];
-		$stats['total_human_revenue'] = floatval( $total_orders->total ) - $stats['total_agent_revenue'];
 
 		// Calculate conversion rates (simplified - would need session data for accuracy).
 		$agent_visits = get_transient( AP2_Agent_Detector::STATS_TRANSIENT_KEY );
@@ -153,26 +210,54 @@ class AP2_Admin_Dashboard {
 			$stats['agent_conversion_rate'] = round( ( $stats['total_agent_orders'] / $agent_visits['total_visits'] ) * 100, 2 );
 		}
 
-		// Get top products purchased by agents.
-		$top_products = $wpdb->get_results(
-			"
-			SELECT oi.order_item_name as product_name,
-			       COUNT(*) as purchase_count,
-			       SUM(oim.meta_value) as total_revenue
-			FROM {$wpdb->prefix}woocommerce_order_items oi
-			INNER JOIN {$wpdb->prefix}woocommerce_order_itemmeta oim ON oi.order_item_id = oim.order_item_id
-			INNER JOIN {$wpdb->postmeta} pm ON oi.order_id = pm.post_id
-			WHERE oi.order_item_type = 'line_item'
-			AND oim.meta_key = '_line_total'
-			AND pm.meta_key = '_ap2_is_agent_order'
-			AND pm.meta_value = 'yes'
-			GROUP BY oi.order_item_name
-			ORDER BY purchase_count DESC
-			LIMIT 5
-			"
-		);
+		// Get top products purchased by agents (works for both HPOS and legacy).
+		if ( ! $is_hpos_enabled ) {
+			global $wpdb;
+			$top_products = $wpdb->get_results(
+				"
+				SELECT oi.order_item_name as product_name,
+				       COUNT(*) as purchase_count,
+				       SUM(oim.meta_value) as total_revenue
+				FROM {$wpdb->prefix}woocommerce_order_items oi
+				INNER JOIN {$wpdb->prefix}woocommerce_order_itemmeta oim ON oi.order_item_id = oim.order_item_id
+				INNER JOIN {$wpdb->postmeta} pm ON oi.order_id = pm.post_id
+				WHERE oi.order_item_type = 'line_item'
+				AND oim.meta_key = '_line_total'
+				AND pm.meta_key = '_ap2_is_agent_order'
+				AND pm.meta_value = 'yes'
+				GROUP BY oi.order_item_name
+				ORDER BY purchase_count DESC
+				LIMIT 5
+				"
+			);
+			$stats['top_products'] = $top_products;
+		} else {
+			// For HPOS, process top products from the agent orders.
+			$product_stats = array();
+			foreach ( $agent_orders as $order ) {
+				foreach ( $order->get_items() as $item ) {
+					$product_name = $item->get_name();
+					if ( ! isset( $product_stats[ $product_name ] ) ) {
+						$product_stats[ $product_name ] = array(
+							'product_name'    => $product_name,
+							'purchase_count'  => 0,
+							'total_revenue'   => 0,
+						);
+					}
+					$product_stats[ $product_name ]['purchase_count']++;
+					$product_stats[ $product_name ]['total_revenue'] += $item->get_total();
+				}
+			}
 
-		$stats['top_products'] = $top_products;
+			// Sort and limit to top 5.
+			usort( $product_stats, function( $a, $b ) {
+				return $b['purchase_count'] - $a['purchase_count'];
+			} );
+
+			$stats['top_products'] = array_map( function( $item ) {
+				return (object) $item;
+			}, array_slice( $product_stats, 0, 5 ) );
+		}
 
 		return $stats;
 	}
@@ -184,31 +269,64 @@ class AP2_Admin_Dashboard {
 	 * @return array Recent orders.
 	 */
 	private function get_recent_agent_orders( $limit = 10 ) {
-		global $wpdb;
+		// Check if HPOS is enabled.
+		$is_hpos_enabled = class_exists( '\Automattic\WooCommerce\Utilities\OrderUtil' ) &&
+		                   \Automattic\WooCommerce\Utilities\OrderUtil::custom_orders_table_usage_is_enabled();
 
-		$orders = $wpdb->get_results(
-			$wpdb->prepare(
-				"
-				SELECT p.ID, p.post_date, p.post_status,
-				       pm1.meta_value as agent_id,
-				       pm2.meta_value as total,
-				       pm3.meta_value as currency
-				FROM {$wpdb->posts} p
-				INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id
-				LEFT JOIN {$wpdb->postmeta} pm1 ON p.ID = pm1.post_id AND pm1.meta_key = '_ap2_agent_id'
-				LEFT JOIN {$wpdb->postmeta} pm2 ON p.ID = pm2.post_id AND pm2.meta_key = '_order_total'
-				LEFT JOIN {$wpdb->postmeta} pm3 ON p.ID = pm3.post_id AND pm3.meta_key = '_order_currency'
-				WHERE p.post_type = 'shop_order'
-				AND pm.meta_key = '_ap2_is_agent_order'
-				AND pm.meta_value = 'yes'
-				ORDER BY p.post_date DESC
-				LIMIT %d
-				",
-				$limit
-			)
-		);
+		if ( $is_hpos_enabled ) {
+			// Use HPOS-compatible query.
+			$orders = wc_get_orders( array(
+				'limit'      => $limit,
+				'meta_key'   => '_ap2_is_agent_order',
+				'meta_value' => 'yes',
+				'orderby'    => 'date',
+				'order'      => 'DESC',
+				'return'     => 'objects',
+			) );
 
-		return $orders;
+			// Convert to expected format.
+			$formatted_orders = array();
+			foreach ( $orders as $order ) {
+				$formatted_orders[] = (object) array(
+					'ID'          => $order->get_id(),
+					'post_date'   => $order->get_date_created()->format( 'Y-m-d H:i:s' ),
+					'post_status' => 'wc-' . $order->get_status(),
+					'agent_id'    => $order->get_meta( '_ap2_agent_id' ),
+					'total'       => $order->get_total(),
+					'currency'    => $order->get_currency(),
+				);
+			}
+
+			return $formatted_orders;
+
+		} else {
+			// Legacy database query.
+			global $wpdb;
+
+			$orders = $wpdb->get_results(
+				$wpdb->prepare(
+					"
+					SELECT p.ID, p.post_date, p.post_status,
+					       pm1.meta_value as agent_id,
+					       pm2.meta_value as total,
+					       pm3.meta_value as currency
+					FROM {$wpdb->posts} p
+					INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id
+					LEFT JOIN {$wpdb->postmeta} pm1 ON p.ID = pm1.post_id AND pm1.meta_key = '_ap2_agent_id'
+					LEFT JOIN {$wpdb->postmeta} pm2 ON p.ID = pm2.post_id AND pm2.meta_key = '_order_total'
+					LEFT JOIN {$wpdb->postmeta} pm3 ON p.ID = pm3.post_id AND pm3.meta_key = '_order_currency'
+					WHERE p.post_type = 'shop_order'
+					AND pm.meta_key = '_ap2_is_agent_order'
+					AND pm.meta_value = 'yes'
+					ORDER BY p.post_date DESC
+					LIMIT %d
+					",
+					$limit
+				)
+			);
+
+			return $orders;
+		}
 	}
 
 	/**

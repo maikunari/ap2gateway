@@ -6,13 +6,14 @@
  * Version:           1.0.0
  * Requires at least: 5.8
  * Requires PHP:      7.4
+ * Requires Plugins:  woocommerce
  * Author:            AP2 Gateway
  * Author URI:        https://ap2gateway.com
  * Text Domain:       ap2-gateway
  * Domain Path:       /languages
  * License:           GPL v2 or later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
- * WC requires at least: 5.0
+ * WC requires at least: 7.1
  * WC tested up to:   9.0
  */
 
@@ -145,6 +146,7 @@ class AP2_Gateway {
 		if ( is_admin() ) {
 			require_once AP2_GATEWAY_PLUGIN_DIR . 'includes/class-ap2-admin-stats.php';
 			require_once AP2_GATEWAY_PLUGIN_DIR . 'includes/class-ap2-admin-dashboard.php';
+			require_once AP2_GATEWAY_PLUGIN_DIR . 'includes/class-ap2-order-handler.php';
 		}
 	}
 
@@ -193,6 +195,24 @@ class AP2_Gateway {
 // Activation and deactivation hooks.
 register_activation_hook( __FILE__, array( 'AP2_Gateway', 'activate' ) );
 register_deactivation_hook( __FILE__, array( 'AP2_Gateway', 'deactivate' ) );
+
+// Declare HPOS compatibility before WooCommerce initialization.
+add_action( 'before_woocommerce_init', function() {
+	if ( class_exists( '\Automattic\WooCommerce\Utilities\FeaturesUtil' ) ) {
+		\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility(
+			'custom_order_tables',
+			__FILE__,
+			true
+		);
+
+		// Also declare compatibility with other WooCommerce features.
+		\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility(
+			'cart_checkout_blocks',
+			__FILE__,
+			true
+		);
+	}
+});
 
 // Initialize the plugin.
 add_action( 'plugins_loaded', array( 'AP2_Gateway', 'instance' ), 0 );
