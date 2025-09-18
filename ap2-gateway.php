@@ -148,6 +148,16 @@ class AP2_Gateway {
 			require_once AP2_GATEWAY_PLUGIN_DIR . 'includes/class-ap2-admin-dashboard.php';
 			require_once AP2_GATEWAY_PLUGIN_DIR . 'includes/class-ap2-order-handler.php';
 		}
+
+		// Load HPOS features if WooCommerce supports it.
+		if ( class_exists( '\Automattic\WooCommerce\Utilities\OrderUtil' ) ) {
+			require_once AP2_GATEWAY_PLUGIN_DIR . 'includes/class-ap2-hpos-optimizer.php';
+			require_once AP2_GATEWAY_PLUGIN_DIR . 'includes/class-ap2-datastore.php';
+			require_once AP2_GATEWAY_PLUGIN_DIR . 'includes/class-ap2-migration-handler.php';
+
+			// Register DataStore.
+			add_filter( 'woocommerce_data_stores', array( $this, 'register_data_stores' ) );
+		}
 	}
 
 	/**
@@ -189,6 +199,17 @@ class AP2_Gateway {
 	public static function deactivate() {
 		// Deactivation tasks if needed.
 		flush_rewrite_rules();
+	}
+
+	/**
+	 * Register custom data stores.
+	 *
+	 * @param array $stores Data stores.
+	 * @return array Modified stores.
+	 */
+	public function register_data_stores( $stores ) {
+		$stores['report-agent-orders'] = 'AP2_Agent_Orders_DataStore';
+		return $stores;
 	}
 }
 
