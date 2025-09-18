@@ -141,9 +141,10 @@ class AP2_Gateway {
 		// Initialize agent detector.
 		AP2_Agent_Detector::instance();
 
-		// Load admin statistics if in admin.
+		// Load admin features if in admin.
 		if ( is_admin() ) {
 			require_once AP2_GATEWAY_PLUGIN_DIR . 'includes/class-ap2-admin-stats.php';
+			require_once AP2_GATEWAY_PLUGIN_DIR . 'includes/class-ap2-admin-dashboard.php';
 		}
 	}
 
